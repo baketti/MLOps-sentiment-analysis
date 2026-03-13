@@ -1,4 +1,4 @@
-# sentiment-mlops
+# Sentimenti Analysis MLOps
 
 End-to-end MLOps pipeline for sentiment analysis on tweets using a fine-tuned RoBERTa model.
 
