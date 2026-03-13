@@ -1,0 +1,11 @@
+transformers
+datasets
+torch
+scikit-learn
+mlflow
+fastapi
+uvicorn
+prometheus-client
+apache-airflow
+pandas
+pydantic

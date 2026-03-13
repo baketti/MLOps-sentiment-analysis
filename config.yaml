@@ -1,0 +1,12 @@
+model_id: cardiffnlp/twitter-roberta-base-sentiment-latest
+
+thresholds:
+  f1_min: 0.85
+  accuracy_min: 0.90
+
+training:
+  lr: 2e-5
+  epochs: 3
+  batch_size: 16
+  max_length: 128
+  seed: 42
