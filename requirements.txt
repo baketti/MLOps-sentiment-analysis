@@ -9,3 +9,4 @@ prometheus-client
 apache-airflow
 pandas
 pydantic
+kagglehub[pandas-datasets]
