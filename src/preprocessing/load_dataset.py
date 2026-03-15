@@ -1,15 +1,17 @@
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
+from pandas import DataFrame, Series 
 
-def load_sentiment_analysis_dataset():
+
+def load_sentiment_analysis_dataset() -> DataFrame:
     """
         Loads the sentiment analysis dataset from Kaggle.
         Returns:
             pd.DataFrame: A DataFrame containing the sentiment analysis dataset.
     """
-    file_path = "sentiment_analysis.csv"
+    file_path: str = "sentiment_analysis.csv"
 
-    df = kagglehub.load_dataset(
+    df: DataFrame = kagglehub.load_dataset(
         KaggleDatasetAdapter.PANDAS,
         "mdismielhossenabir/sentiment-analysis",
         file_path
@@ -17,7 +19,8 @@ def load_sentiment_analysis_dataset():
 
     return df
 
-def get_sentiment_analysis_dataset(df):
+
+def get_sentiment_analysis_dataset(df: DataFrame) -> tuple[Series, Series]:
     """
         Prepares the dataset for model training by splitting it into features and labels.
         Params:
@@ -25,12 +28,13 @@ def get_sentiment_analysis_dataset(df):
         Returns:
             tuple: A tuple containing the features (X: pd.Series) and labels (y: pd.Series).
     """
-    X = df['text']
-    y = df['sentiment']
+    X: Series = df['text']
+    y: Series = df['sentiment']
 
     return (X, y)
 
-def load_and_get_sentiment_analysis_dataset():
+
+def load_and_get_sentiment_analysis_dataset() -> tuple[Series, Series]:
     """
         Loads the sentiment analysis dataset and prepares it for model training.
         Returns:
