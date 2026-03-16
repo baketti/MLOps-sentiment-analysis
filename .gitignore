@@ -46,6 +46,7 @@ models/checkpoint/*
 # MLflow
 mlruns/
 mlartifacts/
+mlflow.db
 
 # OS
 .DS_Store
