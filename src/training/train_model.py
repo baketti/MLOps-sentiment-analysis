@@ -103,8 +103,7 @@ def fine_tune_model(train_dataset: Dataset, test_dataset: Dataset, model: AutoMo
 
     training_args = TrainingArguments(
         output_dir=MODEL_OUTPUT_DIR,
-        metric_for_best_model="f1_macro",
-        report_to="none",# cambia in "mlflow" se MLflow è configurato
+        report_to="mlflow",
     )
 
     trainer = Trainer(
