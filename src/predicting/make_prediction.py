@@ -4,9 +4,6 @@ import os
 
 load_dotenv()
 
-HF_MODEL_NAME = os.getenv("HF_MODEL_NAME")
-HF_FT_MODEL_NAME = os.getenv("HF_FT_MODEL_NAME")
-
 
 def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
     """
