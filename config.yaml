@@ -1,12 +1,12 @@
-model_id: cardiffnlp/twitter-roberta-base-sentiment-latest
+hf_model:
+  name: cardiffnlp/twitter-roberta-base-sentiment-latest
+  fine_tuned_name: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
+  num_labels: 3
+  label2id:
+    negative: 0
+    neutral: 1
+    positive: 2
 
 thresholds:
   f1_min: 0.85
   accuracy_min: 0.90
-
-training:
-  lr: 2e-5
-  epochs: 3
-  batch_size: 16
-  max_length: 128
-  seed: 42
