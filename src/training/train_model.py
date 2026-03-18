@@ -14,6 +14,7 @@ from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
 from utils.config import load_config
+from evaluating.evaluate import evaluate_hf_fine_tuned_model
 
 load_dotenv()
 config = load_config()
@@ -37,7 +38,8 @@ def get_train_test_datasets() -> tuple[Dataset, Dataset]:
     """
         Loads the sentiment analysis dataset, splits it into training and testing sets, and converts them into Hugging Face Datasets.
         Returns:
-            tuple: A tuple containing the training and testing datasets as Hugging Face Datasets."""
+            tuple: A tuple containing the training and testing datasets as Hugging Face Datasets.
+    """
     X, y = load_and_get_sentiment_analysis_dataset()
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -59,7 +61,8 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset) 
             train_dataset (Dataset): The training dataset as a Hugging Face Dataset.
             test_dataset (Dataset): The testing dataset as a Hugging Face Dataset.
         Returns:
-            tuple: A tuple containing the tokenized training and testing datasets as Hugging Face Datasets"""
+            tuple: A tuple containing the tokenized training and testing datasets as Hugging Face Datasets
+    """
     def tokenize(batch):
         tokenized = tokenizer(
             batch["text"],
@@ -118,26 +121,25 @@ def fine_tune_model(train_dataset: Dataset, test_dataset: Dataset, model: AutoMo
     )
 
     trainer.train()
-    print(trainer.model)
 
     return trainer
 
 
-def save_and_push_model_on_hf_hub(trainer: Trainer, tokenizer: AutoTokenizer, model_output_dir: str, hub_name: str, push_to_hub: bool=False) -> None:
+def save_and_push_model_on_hf_hub(
+        trainer: Trainer, tokenizer: AutoTokenizer, model_output_dir: str, quality_thresholds: dict
+    ) -> None:
     """
-        Saves the fine-tuned model and tokenizer to the specified directory and optionally pushes it to the Hugging Face Hub.
+        Saves the fine-tuned model and tokenizer to the specified directory and pushes it to the Hugging Face Hub if and only if it passes the quality gate.
         Params:
             trainer (Trainer): The Trainer object after fine-tuning the model.
             tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
             model_output_dir (str): The directory where the model and tokenizer will be saved.
-            hub_name (str): The name of the model on the Hugging Face Hub.
-            push_to_hub (bool): Whether to push the model to the Hugging Face Hub.
+            quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether to push the model to the Hugging Face Hub.
     """
     trainer.save_model(model_output_dir)
     tokenizer.save_pretrained(model_output_dir)
-
-    if push_to_hub:
-        trainer.push_to_hub(hub_name)
+    
+    evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
 
 
 def train_and_save_model(model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str) -> None:
