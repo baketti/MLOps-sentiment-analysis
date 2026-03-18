@@ -26,17 +26,17 @@ def evaluate_hf_pretrained_model(pipeline, test_dataset, label2id):
     }
 
 
-def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> bool:
+def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> tuple[bool, dict]:
     """
         Evaluates the performance of the Hugging Face fine-tuned model using and checks if it meets the specified quality thresholds for accuracy and F1 score.
         Params:
             trainer (Trainer): The Trainer object after fine-tuning the model.
             quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether the model is ready to be pushed to the Hugging Face Hub.
         Returns:
-            bool: True if the model meets the quality thresholds and is ready to be pushed to the Hugging Face Hub, False otherwise.
+            tuple: A tuple containing a boolean indicating whether the model is ready to be pushed to the Hugging Face Hub and a dictionary with the evaluation metrics (accuracy and F1 macro score).
     """
     is_ready_for_hf_hub = False
-    
+
     accuracy_threshold = quality_thresholds.get("accuracy_min", 0.7)
     f1_score_threshold  = quality_thresholds.get("f1_min", 0.7)
 
@@ -48,4 +48,7 @@ def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> 
     if (accuracy >= accuracy_threshold) and (f1_macro >= f1_score_threshold):
         is_ready_for_hf_hub = True
 
-    return is_ready_for_hf_hub
+    return is_ready_for_hf_hub, {
+        "accuracy": accuracy,
+        "f1_macro": f1_macro
+    }
