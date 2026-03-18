@@ -14,6 +14,7 @@ from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
 from utils.config import load_config
+from utils.hf_commit import create_hf_hub_commit_message
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
 
 load_dotenv()
@@ -85,14 +86,17 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset) 
     return train_dataset, test_dataset
 
 
-def fine_tune_model(train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer) -> Trainer:
-    """    
+def fine_tune_model(
+        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, hub_model_id: str
+    ) -> Trainer:
+    """
         Fine-tunes the pre-trained model on the training dataset and evaluates it on the testing dataset.
         Params:
             train_dataset (Dataset): The tokenized training dataset as a Hugging Face Dataset.
             test_dataset (Dataset): The tokenized testing dataset as a Hugging Face Dataset.
             model (AutoModelForSequenceClassification): The pre-trained model to be fine-tuned.
             tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
+            hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
         Returns:
             Trainer: The Trainer object after fine-tuning the model.
     """
@@ -108,6 +112,7 @@ def fine_tune_model(train_dataset: Dataset, test_dataset: Dataset, model: AutoMo
 
     training_args = TrainingArguments(
         output_dir=MODEL_OUTPUT_DIR,
+        hub_model_id=hub_model_id,
         report_to="mlflow",
     )
 
@@ -138,8 +143,12 @@ def save_and_push_model_on_hf_hub(
     """
     trainer.save_model(model_output_dir)
     tokenizer.save_pretrained(model_output_dir)
-    
-    evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
+
+    is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
+
+    if is_ready_to_push:
+        commit_message = create_hf_hub_commit_message(metrics)
+        trainer.push_to_hub(commit_message)
 
 
 def train_and_save_model(model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str) -> None:
