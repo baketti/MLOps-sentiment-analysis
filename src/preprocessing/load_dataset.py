@@ -1,9 +1,9 @@
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from pandas import DataFrame, Series 
+from datasets import load_dataset
 
-
-def load_sentiment_analysis_dataset() -> DataFrame:
+def load_sentiment_analysis_dataset():
     """
         Loads the sentiment analysis dataset from Kaggle.
         Returns:

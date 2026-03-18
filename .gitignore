@@ -42,6 +42,7 @@ data/raw/*
 data/processed/*
 data/splits/*
 models/checkpoint/*
+models/
 
 # MLflow
 mlruns/

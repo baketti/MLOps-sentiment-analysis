@@ -10,3 +10,9 @@ hf_model:
 thresholds:
   f1_min: 0.85
   accuracy_min: 0.90
+
+data:
+  dataset_name: "tweet_eval"
+  dataset_split: "sentiment"
+  train_size: 5000          
+  random_state: 42          
