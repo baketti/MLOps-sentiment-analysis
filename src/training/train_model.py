@@ -12,6 +12,7 @@ from loading.load_dataset import KaggleDatasetLoader
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
+from utils.exceptions import InvalidDatasetStructureError, LoadingDatasetError, FineTuningError, PushingToHubError
 
 def get_train_test_datasets(dataset_name: str, file_path: str) -> tuple[Dataset, Dataset]:
     """
@@ -21,19 +22,27 @@ def get_train_test_datasets(dataset_name: str, file_path: str) -> tuple[Dataset,
             file_path (str): The path to the specific file within the Kaggle dataset to load
         Returns:
             tuple: A tuple containing the training and testing datasets as Hugging Face Datasets.
+        Raises:
+            LoadingDatasetError: If there is an error loading the dataset from Kaggle.
+            InvalidDatasetStructureError: If the loaded dataset does not contain the required 'text' and 'sentiment' columns.
     """
-    kdl = KaggleDatasetLoader(dataset_name, file_path)
+    try:
+        kdl = KaggleDatasetLoader(dataset_name, file_path)
 
-    X, y = kdl.load_and_get_sentiment_analysis_dataset()
+        X, y = kdl.load_and_get_sentiment_analysis_dataset()
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    train_dataset = Dataset.from_pandas(
-        pd.DataFrame({"text": X_train, "label": y_train}).reset_index(drop=True)
-    )
-    test_dataset = Dataset.from_pandas(
-        pd.DataFrame({"text": X_test, "label": y_test}).reset_index(drop=True)
-    )
+        train_dataset = Dataset.from_pandas(
+            pd.DataFrame({"text": X_train, "label": y_train}).reset_index(drop=True)
+        )
+        test_dataset = Dataset.from_pandas(
+            pd.DataFrame({"text": X_test, "label": y_test}).reset_index(drop=True)
+        )
+    except LoadingDatasetError as e:
+        raise
+    except InvalidDatasetStructureError as e:
+        raise
 
     return train_dataset, test_dataset
 
@@ -111,7 +120,10 @@ def fine_tune_model(
         compute_metrics=compute_metrics,
     )
 
-    trainer.train()
+    try:
+        trainer.train()
+    except Exception as e:
+        raise FineTuningError(f"Error during fine-tuning: {e}")
 
     return trainer
 
@@ -140,8 +152,11 @@ def save_and_push_model_on_hf_hub(
             f"f1_macro={metrics['f1_macro']:.2f} | "
             f"accuracy={metrics['accuracy']:.4f}"
         )
-        trainer.push_to_hub(commit_message)
 
+        try:
+            trainer.push_to_hub(commit_message)
+        except Exception as e:
+            raise PushingToHubError(f"Error pushing model to Hugging Face Hub: {e}")
 
 def train_and_save_model(model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str) -> None:
     """

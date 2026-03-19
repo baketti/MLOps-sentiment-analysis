@@ -1,5 +1,6 @@
 from sklearn.metrics import f1_score, accuracy_score
 from transformers import Trainer
+from utils.exceptions import EvaluationError
 
 
 def evaluate_hf_pretrained_model(pipeline, test_dataset, label2id):
@@ -12,18 +13,21 @@ def evaluate_hf_pretrained_model(pipeline, test_dataset, label2id):
         Returns:
             dict: A dictionary containing the F1 macro score and accuracy of the model on the test dataset.
     """
-    y_true, y_pred = [], []
+    try:
+        y_true, y_pred = [], []
 
-    for data in test_dataset:
-        result = pipeline(data["text"])
-        best   = max(result, key=lambda x: x["score"])
-        y_true.append(data["label"])
-        y_pred.append(label2id[best["label"].lower()])
+        for data in test_dataset:
+            result = pipeline(data["text"])
+            best   = max(result, key=lambda x: x["score"])
+            y_true.append(data["label"])
+            y_pred.append(label2id[best["label"].lower()])
 
-    return {
-        "f1_macro": f1_score(y_true, y_pred, average="macro"),
-        "accuracy": accuracy_score(y_true, y_pred)
-    }
+        return {
+            "f1_macro": f1_score(y_true, y_pred, average="macro"),
+            "accuracy": accuracy_score(y_true, y_pred)
+        }
+    except Exception as e:
+        raise EvaluationError(f"Error during pretrained model evaluation: {e}")
 
 
 def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> tuple[bool, dict]:
@@ -35,20 +39,23 @@ def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> 
         Returns:
             tuple: A tuple containing a boolean indicating whether the model is ready to be pushed to the Hugging Face Hub and a dictionary with the evaluation metrics (accuracy and F1 macro score).
     """
-    is_ready_for_hf_hub = False
+    try:
+        is_ready_for_hf_hub = False
 
-    accuracy_threshold = quality_thresholds.get("accuracy_min", 0.7)
-    f1_score_threshold  = quality_thresholds.get("f1_min", 0.7)
+        accuracy_threshold = quality_thresholds.get("accuracy_min", 0.7)
+        f1_score_threshold  = quality_thresholds.get("f1_min", 0.7)
 
-    eval_results = trainer.evaluate()
+        eval_results = trainer.evaluate()
 
-    accuracy = eval_results.get("eval_accuracy", 0)
-    f1_macro = eval_results.get("eval_f1_macro", 0)
+        accuracy = eval_results.get("eval_accuracy", 0)
+        f1_macro = eval_results.get("eval_f1_macro", 0)
 
-    if (accuracy >= accuracy_threshold) and (f1_macro >= f1_score_threshold):
-        is_ready_for_hf_hub = True
+        if (accuracy >= accuracy_threshold) and (f1_macro >= f1_score_threshold):
+            is_ready_for_hf_hub = True
 
-    return is_ready_for_hf_hub, {
-        "accuracy": accuracy,
-        "f1_macro": f1_macro
-    }
+        return is_ready_for_hf_hub, {
+            "accuracy": accuracy,
+            "f1_macro": f1_macro
+        }
+    except Exception as e:
+        raise EvaluationError(f"Error during fine-tuned model evaluation: {e}")

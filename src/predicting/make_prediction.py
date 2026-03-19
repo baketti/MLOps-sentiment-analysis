@@ -1,4 +1,5 @@
 from transformers import pipeline, TextClassificationPipeline
+from utils.exceptions import PredictionError
 
 def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
     """
@@ -6,13 +7,16 @@ def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
         Returns:
             TextClassificationPipeline: A Hugging Face pipeline for text classification.
     """
-    return pipeline(
-        task="text-classification",
-        model=model_name,
-        tokenizer=model_name,
-        truncation=True,
-        max_length=512,     
-    )
+    try:
+        return pipeline(
+            task="text-classification",
+            model=model_name,
+            tokenizer=model_name,
+            truncation=True,
+            max_length=512,
+        )
+    except Exception as e:
+        raise PredictionError(f"Error loading model '{model_name}': {e}")
 
 
 def predict(text: str, pipeline: TextClassificationPipeline) -> dict:
@@ -24,9 +28,12 @@ def predict(text: str, pipeline: TextClassificationPipeline) -> dict:
         Returns:
             dict: A dictionary containing the predicted label and its corresponding score.
     """
-    scores = pipeline(text)
-    best = max(scores, key=lambda x: x["score"])
-    return best
+    try:
+        scores = pipeline(text)
+        best = max(scores, key=lambda x: x["score"])
+        return best
+    except Exception as e:
+        raise PredictionError(f"Error during prediction: {e}")
 
 
 def make_prediction(text: str, model_name: str) -> dict:
