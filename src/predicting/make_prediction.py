@@ -1,9 +1,4 @@
 from transformers import pipeline, TextClassificationPipeline
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
 
 def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
     """

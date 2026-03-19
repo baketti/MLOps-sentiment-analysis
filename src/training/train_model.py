@@ -1,5 +1,3 @@
-from preprocessing.load_dataset import load_and_get_sentiment_analysis_dataset
-import os
 import numpy as np
 import pandas as pd
 from datasets import Dataset
@@ -10,38 +8,23 @@ from transformers import (
     Trainer,
     DataCollatorWithPadding,
 )
+from loading.load_dataset import KaggleDatasetLoader
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
-from dotenv import load_dotenv
-from utils.config import load_config
-from utils.hf_commit import create_hf_hub_commit_message
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
 
-load_dotenv()
-config = load_config()
-
-HF_MODEL_NAME = config.get("hf_model", {}).get("name", "cardiffnlp/twitter-roberta-base-sentiment-latest")
-MODEL_OUTPUT_DIR = os.getenv("MODEL_OUTPUT_DIR")
-
-NUM_LABELS = config.get("hf_model", {}).get("num_labels", 3)
-LABEL2ID   = config.get("hf_model", {}).get("label2id", {"negative": 0, "neutral": 1, "positive": 2})
-ID2LABEL   = {v: k for k, v in LABEL2ID.items()}
-
-tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(HF_MODEL_NAME)
-model: AutoModelForSequenceClassification = AutoModelForSequenceClassification.from_pretrained(
-    HF_MODEL_NAME,
-    num_labels=NUM_LABELS,
-    ignore_mismatched_sizes=True,
-)
-
-
-def get_train_test_datasets() -> tuple[Dataset, Dataset]:
+def get_train_test_datasets(dataset_name: str, file_path: str) -> tuple[Dataset, Dataset]:
     """
         Loads the sentiment analysis dataset, splits it into training and testing sets, and converts them into Hugging Face Datasets.
+        Params:
+            dataset_name (str): The name of the Kaggle dataset to load.
+            file_path (str): The path to the specific file within the Kaggle dataset to load
         Returns:
             tuple: A tuple containing the training and testing datasets as Hugging Face Datasets.
     """
-    X, y = load_and_get_sentiment_analysis_dataset()
+    kdl = KaggleDatasetLoader(dataset_name, file_path)
+
+    X, y = kdl.load_and_get_sentiment_analysis_dataset()
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
@@ -55,12 +38,14 @@ def get_train_test_datasets() -> tuple[Dataset, Dataset]:
     return train_dataset, test_dataset
 
 
-def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset) -> tuple[Dataset, Dataset]:
+def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset, tokenizer: AutoTokenizer, label2id: dict) -> tuple[Dataset, Dataset]:
     """
         Tokenizes the text in the training and testing datasets.
         Params:
             train_dataset (Dataset): The training dataset as a Hugging Face Dataset.
             test_dataset (Dataset): The testing dataset as a Hugging Face Dataset.
+            tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
+            label2id (dict): A mapping from label names to label IDs.
         Returns:
             tuple: A tuple containing the tokenized training and testing datasets as Hugging Face Datasets
     """
@@ -71,7 +56,7 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset) 
             padding=False,
             max_length=128,
         )
-        tokenized["labels"] = [LABEL2ID[lbl.lower()] for lbl in batch["label"]]
+        tokenized["labels"] = [label2id[lbl.lower()] for lbl in batch["label"]]
         return tokenized
 
     train_dataset = train_dataset.map(tokenize, batched=True)
@@ -87,7 +72,7 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset) 
 
 
 def fine_tune_model(
-        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, hub_model_id: str
+        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str, hub_model_id: str
     ) -> Trainer:
     """
         Fine-tunes the pre-trained model on the training dataset and evaluates it on the testing dataset.
@@ -96,6 +81,7 @@ def fine_tune_model(
             test_dataset (Dataset): The tokenized testing dataset as a Hugging Face Dataset.
             model (AutoModelForSequenceClassification): The pre-trained model to be fine-tuned.
             tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
+            model_output_dir (str): The directory where the fine-tuned model and tokenizer will be saved.
             hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
         Returns:
             Trainer: The Trainer object after fine-tuning the model.
@@ -111,7 +97,7 @@ def fine_tune_model(
         }
 
     training_args = TrainingArguments(
-        output_dir=MODEL_OUTPUT_DIR,
+        output_dir=model_output_dir,
         hub_model_id=hub_model_id,
         report_to="mlflow",
     )
@@ -147,7 +133,13 @@ def save_and_push_model_on_hf_hub(
     is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
 
     if is_ready_to_push:
-        commit_message = create_hf_hub_commit_message(metrics)
+        commit_message = (
+            #f"dataset=tweet_eval | "
+            #f"train_size={train_config['train_size']} | "
+            #f"epochs={train_config['num_epochs']} | "
+            f"f1_macro={metrics['f1_macro']:.2f} | "
+            f"accuracy={metrics['accuracy']:.4f}"
+        )
         trainer.push_to_hub(commit_message)
 
 
