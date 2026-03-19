@@ -1,7 +1,7 @@
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from pandas import DataFrame, Series 
-
+from utils.exceptions import InvalidDatasetStructureError, LoadingDatasetError
 
 class KaggleDatasetLoader:
     """
@@ -26,11 +26,16 @@ class KaggleDatasetLoader:
             Returns:
                 pd.DataFrame: A DataFrame containing the sentiment analysis dataset.
         """
-        df: DataFrame = kagglehub.load_dataset(
-            KaggleDatasetAdapter.PANDAS,
-            self.dataset_name,
-            self.file_path
-        )
+        try:
+            df: DataFrame = kagglehub.load_dataset(
+                KaggleDatasetAdapter.PANDAS,
+                self.dataset_name,
+                self.file_path
+            )
+
+        except Exception as e:
+            print(f"Error loading dataset: {e}")
+            raise LoadingDatasetError(f"Error loading dataset: {e}")
 
         return df
 
@@ -42,7 +47,12 @@ class KaggleDatasetLoader:
                 df (pd.DataFrame): The DataFrame containing the sentiment analysis dataset.
             Returns:
                 tuple: A tuple containing the features (X: pd.Series) and labels (y: pd.Series).
+            Raises:
+                InvalidDatasetStructureError: If the required columns 'text' and 'sentiment' are not present in the DataFrame.
         """
+        if 'text' not in df.columns or 'sentiment' not in df.columns:
+            raise InvalidDatasetStructureError("Dataset must contain 'text' and 'sentiment' columns.")
+            
         X: Series = df['text']
         y: Series = df['sentiment']
 
@@ -54,6 +64,16 @@ class KaggleDatasetLoader:
             Loads the sentiment analysis dataset and prepares it for model training.
             Returns:
                 tuple: A tuple containing the features (X: pd.Series) and labels (y: pd.Series).
+            Raises:
+                InvalidDatasetStructureError: If the required columns 'text' and 'sentiment' are not present in the DataFrame.
+                LoadingDatasetError: If there is an error loading the dataset or preparing it.
         """
-        df = self._load_sentiment_analysis_dataset()
-        return self._get_sentiment_analysis_dataset(df)
+        try:
+            df = self._load_sentiment_analysis_dataset()
+            return self._get_sentiment_analysis_dataset(df)
+        except InvalidDatasetStructureError:
+            raise
+        except LoadingDatasetError:
+            raise
+        except Exception as e:
+            raise LoadingDatasetError(f"Unexpected error loading/preparing dataset. {e}")

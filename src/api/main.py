@@ -1,4 +1,5 @@
 from utils.config import load_config
+from utils.exceptions import ConfigLoadError
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from api.routers import training, prediction
@@ -9,7 +10,11 @@ async def lifespan(app: FastAPI):
     """
         Application lifespan: load configuration once and attach it to app.state.
     """
-    app.state.config = load_config()
+    try:
+        app.state.config = load_config()
+    except ConfigLoadError as e:
+        print(f"Configuration error during startup: {e}")
+        raise
     yield
     app.state.config.clear()
 
