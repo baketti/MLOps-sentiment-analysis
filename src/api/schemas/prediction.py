@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
-
-class PredictRequest(BaseModel):
+class PredictRequestBody(BaseModel):
     text: str = Field(
         min_length=1,
         max_length=512,
@@ -8,7 +7,7 @@ class PredictRequest(BaseModel):
         example="I love this product! It works great and exceeded my expectations.",
     )
 
-class PredictResponse(BaseModel):
+class PredictResponseBody(BaseModel):
     model_used: str = Field(
         description="The name of the model used for prediction, either the base model or the fine-tuned model.",
         example="distilbert/base-uncased-finetuned-sst-2-english",
