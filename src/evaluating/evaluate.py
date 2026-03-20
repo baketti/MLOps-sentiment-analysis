@@ -12,6 +12,8 @@ def evaluate_hf_pretrained_model(pipeline, test_dataset, label2id):
             label2id: A dictionary mapping label names to their corresponding IDs.
         Returns:
             dict: A dictionary containing the F1 macro score and accuracy of the model on the test dataset.
+        Raises:
+            EvaluationError: If there is an error during the evaluation process.
     """
     try:
         y_true, y_pred = [], []
@@ -38,6 +40,8 @@ def evaluate_hf_fine_tuned_model(trainer: Trainer, quality_thresholds: dict) -> 
             quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether the model is ready to be pushed to the Hugging Face Hub.
         Returns:
             tuple: A tuple containing a boolean indicating whether the model is ready to be pushed to the Hugging Face Hub and a dictionary with the evaluation metrics (accuracy and F1 macro score).
+        Raises:
+            EvaluationError: If there is an error during the evaluation process.
     """
     try:
         is_ready_for_hf_hub = False
