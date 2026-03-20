@@ -10,3 +10,4 @@ kagglehub[pandas-datasets]
 transformers
 transformers[torch]
 datasets
+pytest
