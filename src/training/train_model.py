@@ -164,32 +164,3 @@ def save_and_push_model_on_hf_hub(
         raise
     except Exception as e:
         raise Exception(f"Unexpected error saving model or tokenizer: {e}")
-
-def train_and_save_model(
-        model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, 
-        dataset_name: str, file_path: str, 
-        label2id: dict, model_output_dir: str, hub_model_id: str, quality_thresholds: dict
-    ) -> None:
-    """
-        Orchestrates the entire process of loading the dataset, tokenizing it, fine-tuning the model, and saving/pushing it to the Hugging Face Hub.
-        Params:
-            model (AutoModelForSequenceClassification): The pre-trained model to be fine-tuned.
-            tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
-            dataset_name (str): The name of the Kaggle dataset to load.
-            file_path (str): The path to the specific file within the Kaggle dataset to load.
-            label2id (dict): A mapping from label names to label IDs.
-            model_output_dir (str): The directory where the model and tokenizer will be saved.
-            hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
-            quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether to push the model to the Hugging Face Hub.
-    """
-    train_dataset, test_dataset = get_train_test_datasets(dataset_name, file_path)
-    train_dataset, test_dataset = tokenize_train_test_datasets(train_dataset, test_dataset, tokenizer, label2id)
-
-    trainer = fine_tune_model(train_dataset, test_dataset, model, tokenizer, model_output_dir, hub_model_id)
-
-    save_and_push_model_on_hf_hub(
-        trainer,
-        tokenizer,
-        model_output_dir,
-        quality_thresholds
-    )
