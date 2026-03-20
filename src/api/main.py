@@ -43,8 +43,8 @@ async def lifespan(app: FastAPI):
 
         except Exception as e:
             raise ModelLoadingError(f"Error loading model '{HF_MODEL_NAME}': {e}")
-    except ConfigLoadError as e:
-        print(f"Configuration error during startup: {e}")
+    except (ConfigLoadError, ModelLoadingError) as e:
+        print(f"Startup error: {e}")
         raise
     yield
     app.state.config.clear()
