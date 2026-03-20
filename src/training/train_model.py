@@ -95,6 +95,8 @@ def fine_tune_model(
             hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
         Returns:
             Trainer: The Trainer object after fine-tuning the model.
+        Raises:
+            FineTuningError: If there is an error during the fine-tuning process.
     """
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
