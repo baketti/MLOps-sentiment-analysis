@@ -162,7 +162,7 @@ def save_and_push_model_on_hf_hub(
             except Exception as e:
                 raise PushingToHubError(f"Error pushing model to Hugging Face Hub: {e}")
 
-    except EvaluationError as e:
+    except (EvaluationError, PushingToHubError) as e:
         raise
     except Exception as e:
         raise Exception(f"Unexpected error saving model or tokenizer: {e}")
