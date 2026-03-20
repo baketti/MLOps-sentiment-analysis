@@ -1,15 +1,18 @@
-from utils.config import load_config
 from huggingface_hub import model_info
+from huggingface_hub.errors import RepositoryNotFoundError
 
-config = load_config()
-BASE_MODEL = config["hf_model"]["name"]
-FINETUNED_MODEL = config["hf_hub_model_id"]
-
-def resolve_model() -> str:
+def resolve_model(base_model_name: str, finetuned_model_name: str) -> str:
+    """
+        Resolves which model to use for prediction. It first checks if the fine-tuned model is available on Hugging Face Hub. If it is, it returns the fine-tuned model name. If not, it falls back to the base model name.
+        Params:
+            base_model_name (str): The name of the base model (e.g., "cardiffnlp/twitter-roberta-base-sentiment-latest").
+            finetuned_model_name (str): The name of the fine-tuned model (e.g., "username/finetuned-model").
+        Returns:
+            str: The name of the model to use for prediction.
+    """
     try:
-        model_info(FINETUNED_MODEL)
-        return FINETUNED_MODEL
-    except Exception as e:
-        print(f"Fine-tuned model '{FINETUNED_MODEL}' not available: {e}. Falling back to base model.")
-        return BASE_MODEL
-    
+        model_info(finetuned_model_name)
+        return finetuned_model_name
+    except RepositoryNotFoundError as e:
+        print(f"Fine-tuned model '{finetuned_model_name}' not available: {e}. Falling back to base model.")
+        return base_model_name

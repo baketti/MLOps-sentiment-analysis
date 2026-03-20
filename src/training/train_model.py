@@ -12,7 +12,7 @@ from loading.load_dataset import KaggleDatasetLoader
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
-from utils.exceptions import InvalidDatasetStructureError, LoadingDatasetError, FineTuningError, PushingToHubError
+from utils.exceptions import InvalidDatasetStructureError, LoadingDatasetError, FineTuningError, PushingToHubError, EvaluationError
 
 def get_train_test_datasets(dataset_name: str, file_path: str) -> tuple[Dataset, Dataset]:
     """
@@ -81,7 +81,8 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset, 
 
 
 def fine_tune_model(
-        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str, hub_model_id: str
+        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, 
+        model_output_dir: str, hub_model_id: str
     ) -> Trainer:
     """
         Fine-tunes the pre-trained model on the training dataset and evaluates it on the testing dataset.
@@ -139,42 +140,56 @@ def save_and_push_model_on_hf_hub(
             model_output_dir (str): The directory where the model and tokenizer will be saved.
             quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether to push the model to the Hugging Face Hub.
     """
-    trainer.save_model(model_output_dir)
-    tokenizer.save_pretrained(model_output_dir)
+    try:
+        trainer.save_model(model_output_dir)
+        tokenizer.save_pretrained(model_output_dir)
 
-    is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
+        is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
+    
+        if is_ready_to_push:
+            commit_message = (
+                #f"dataset=tweet_eval | "
+                #f"train_size={train_config['train_size']} | "
+                #f"epochs={train_config['num_epochs']} | "
+                f"f1_macro={metrics['f1_macro']:.2f} | "
+                f"accuracy={metrics['accuracy']:.4f}"
+            )
 
-    if is_ready_to_push:
-        commit_message = (
-            #f"dataset=tweet_eval | "
-            #f"train_size={train_config['train_size']} | "
-            #f"epochs={train_config['num_epochs']} | "
-            f"f1_macro={metrics['f1_macro']:.2f} | "
-            f"accuracy={metrics['accuracy']:.4f}"
-        )
+            try:
+                trainer.push_to_hub(commit_message)
+            except Exception as e:
+                raise PushingToHubError(f"Error pushing model to Hugging Face Hub: {e}")
 
-        try:
-            trainer.push_to_hub(commit_message)
-        except Exception as e:
-            raise PushingToHubError(f"Error pushing model to Hugging Face Hub: {e}")
+    except EvaluationError as e:
+        raise
+    except Exception as e:
+        raise Exception(f"Unexpected error saving model or tokenizer: {e}")
 
-def train_and_save_model(model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, model_output_dir: str) -> None:
+def train_and_save_model(
+        model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, 
+        dataset_name: str, file_path: str, 
+        label2id: dict, model_output_dir: str, hub_model_id: str, quality_thresholds: dict
+    ) -> None:
     """
         Orchestrates the entire process of loading the dataset, tokenizing it, fine-tuning the model, and saving/pushing it to the Hugging Face Hub.
         Params:
             model (AutoModelForSequenceClassification): The pre-trained model to be fine-tuned.
             tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
+            dataset_name (str): The name of the Kaggle dataset to load.
+            file_path (str): The path to the specific file within the Kaggle dataset to load.
+            label2id (dict): A mapping from label names to label IDs.
             model_output_dir (str): The directory where the model and tokenizer will be saved.
+            hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
+            quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether to push the model to the Hugging Face Hub.
     """
-    train_dataset, test_dataset = get_train_test_datasets()
-    train_dataset, test_dataset = tokenize_train_test_datasets(train_dataset, test_dataset)
+    train_dataset, test_dataset = get_train_test_datasets(dataset_name, file_path)
+    train_dataset, test_dataset = tokenize_train_test_datasets(train_dataset, test_dataset, tokenizer, label2id)
 
-    trainer = fine_tune_model(train_dataset, test_dataset, model, tokenizer)
+    trainer = fine_tune_model(train_dataset, test_dataset, model, tokenizer, model_output_dir, hub_model_id)
 
     save_and_push_model_on_hf_hub(
         trainer,
         tokenizer,
         model_output_dir,
-        hub_name="sentiment-analysis-bert-finetuned",
-        push_to_hub=True
+        quality_thresholds
     )
