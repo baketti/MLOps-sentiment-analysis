@@ -10,7 +10,6 @@ jobs:
   build-and-push:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    needs: test         
 
     steps:
       - name: Code checkout
