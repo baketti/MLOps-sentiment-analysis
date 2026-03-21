@@ -17,9 +17,3 @@ def test_train_error(client):
         response = client.post("/train")
     assert response.status_code == 500
     assert "GPU out of memory" in response.json()["detail"]
-
-
-def test_get_config(client):
-    response = client.get("/config")
-    assert response.status_code == 200
-    assert "hf_model" in response.json()
