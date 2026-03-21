@@ -11,3 +11,4 @@ transformers
 transformers[torch]
 datasets
 pytest
+flake8
