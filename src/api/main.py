@@ -1,21 +1,21 @@
-from utils.config import load_config
-from utils.exceptions import ConfigLoadError
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from api.routers import training, prediction
-from utils.config import load_config
 import os
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+from fastapi import FastAPI
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
 )
+from utils.config import load_config
 from utils.exceptions import ConfigLoadError, ModelLoadingError
-from dotenv import load_dotenv
+from api.routers import training, prediction
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-        Application lifespan: load configuration once and attach it to app.state.
+        Application lifespan: load configuration once
+        and attach it to app.state.
     """
     try:
         load_dotenv()
@@ -25,29 +25,39 @@ async def lifespan(app: FastAPI):
 
         app.state.config = config
         app.state.config['model_output_dir'] = MODEL_OUTPUT_DIR
-        print(f"MODEL_OUTPUT_DIR in app.state.config: {app.state.config['model_output_dir']}")
+        print(
+            f"MODEL_OUTPUT_DIR in app.state.config: "
+            f"{app.state.config['model_output_dir']}"
+        )
         hf_model_config = config.get("hf_model")
         HF_MODEL_NAME = hf_model_config.get("name")
         NUM_LABELS = hf_model_config.get("num_labels")
 
         try:
-            tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(HF_MODEL_NAME)
-            model: AutoModelForSequenceClassification = AutoModelForSequenceClassification.from_pretrained(
-                HF_MODEL_NAME,
-                num_labels=NUM_LABELS,
-                ignore_mismatched_sizes=True,
+            tokenizer: AutoTokenizer = (
+                AutoTokenizer.from_pretrained(HF_MODEL_NAME)
+            )
+            model: AutoModelForSequenceClassification = (
+                AutoModelForSequenceClassification.from_pretrained(
+                    HF_MODEL_NAME,
+                    num_labels=NUM_LABELS,
+                    ignore_mismatched_sizes=True,
+                )
             )
 
             app.state.config["tokenizer_object"] = tokenizer
             app.state.config["model_object"] = model
 
         except Exception as e:
-            raise ModelLoadingError(f"Error loading model '{HF_MODEL_NAME}': {e}")
+            raise ModelLoadingError(
+                f"Error loading model '{HF_MODEL_NAME}': {e}"
+            )
     except (ConfigLoadError, ModelLoadingError) as e:
         print(f"Startup error: {e}")
         raise
     yield
     app.state.config.clear()
+
 
 app = FastAPI(title="Sentiment Analysis API", lifespan=lifespan)
 

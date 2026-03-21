@@ -12,51 +12,76 @@ from loading.load_dataset import KaggleDatasetLoader
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
-from utils.exceptions import InvalidDatasetStructureError, LoadingDatasetError, FineTuningError, PushingToHubError, EvaluationError
+from utils.exceptions import (
+    InvalidDatasetStructureError,
+    LoadingDatasetError,
+    FineTuningError,
+    PushingToHubError,
+    EvaluationError,
+)
 
-def get_train_test_datasets(dataset_name: str, file_path: str) -> tuple[Dataset, Dataset]:
+
+def get_train_test_datasets(
+    dataset_name: str, file_path: str
+) -> tuple[Dataset, Dataset]:
     """
-        Loads the sentiment analysis dataset, splits it into training and testing sets, and converts them into Hugging Face Datasets.
+        Loads the sentiment analysis dataset, splits it into training
+        and testing sets, and converts them into Hugging Face Datasets.
         Params:
             dataset_name (str): The name of the Kaggle dataset to load.
-            file_path (str): The path to the specific file within the Kaggle dataset to load
+            file_path (str): The path to the specific file within the
+                Kaggle dataset to load.
         Returns:
-            tuple: A tuple containing the training and testing datasets as Hugging Face Datasets.
+            tuple: A tuple containing the training and testing datasets
+                as Hugging Face Datasets.
         Raises:
-            LoadingDatasetError: If there is an error loading the dataset from Kaggle.
-            InvalidDatasetStructureError: If the loaded dataset does not contain the required 'text' and 'sentiment' columns.
+            LoadingDatasetError: If there is an error loading the dataset.
+            InvalidDatasetStructureError: If the loaded dataset does not
+                contain the required 'text' and 'sentiment' columns.
     """
     try:
         kdl = KaggleDatasetLoader(dataset_name, file_path)
 
         X, y = kdl.load_and_get_sentiment_analysis_dataset()
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
 
         train_dataset = Dataset.from_pandas(
-            pd.DataFrame({"text": X_train, "label": y_train}).reset_index(drop=True)
+            pd.DataFrame(
+                {"text": X_train, "label": y_train}
+            ).reset_index(drop=True)
         )
         test_dataset = Dataset.from_pandas(
-            pd.DataFrame({"text": X_test, "label": y_test}).reset_index(drop=True)
+            pd.DataFrame(
+                {"text": X_test, "label": y_test}
+            ).reset_index(drop=True)
         )
-    except LoadingDatasetError as e:
+    except LoadingDatasetError:
         raise
-    except InvalidDatasetStructureError as e:
+    except InvalidDatasetStructureError:
         raise
 
     return train_dataset, test_dataset
 
 
-def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset, tokenizer: AutoTokenizer, label2id: dict) -> tuple[Dataset, Dataset]:
+def tokenize_train_test_datasets(
+    train_dataset: Dataset,
+    test_dataset: Dataset,
+    tokenizer: AutoTokenizer,
+    label2id: dict,
+) -> tuple[Dataset, Dataset]:
     """
         Tokenizes the text in the training and testing datasets.
         Params:
-            train_dataset (Dataset): The training dataset as a Hugging Face Dataset.
-            test_dataset (Dataset): The testing dataset as a Hugging Face Dataset.
-            tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
+            train_dataset (Dataset): The training dataset.
+            test_dataset (Dataset): The testing dataset.
+            tokenizer (AutoTokenizer): The tokenizer to use.
             label2id (dict): A mapping from label names to label IDs.
         Returns:
-            tuple: A tuple containing the tokenized training and testing datasets as Hugging Face Datasets
+            tuple: A tuple containing the tokenized training and testing
+                datasets as Hugging Face Datasets.
     """
     def tokenize(batch):
         tokenized = tokenizer(
@@ -65,38 +90,52 @@ def tokenize_train_test_datasets(train_dataset: Dataset, test_dataset: Dataset, 
             padding=False,
             max_length=128,
         )
-        tokenized["labels"] = [label2id[lbl.lower()] for lbl in batch["label"]]
+        tokenized["labels"] = [
+            label2id[lbl.lower()] for lbl in batch["label"]
+        ]
         return tokenized
 
     train_dataset = train_dataset.map(tokenize, batched=True)
     test_dataset = test_dataset.map(tokenize, batched=True)
 
     train_dataset = train_dataset.remove_columns(["text", "label"])
-    test_dataset  = test_dataset.remove_columns(["text", "label"])
+    test_dataset = test_dataset.remove_columns(["text", "label"])
 
-    train_dataset.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
-    test_dataset.set_format("torch",  columns=["input_ids", "attention_mask", "labels"])
+    train_dataset.set_format(
+        "torch", columns=["input_ids", "attention_mask", "labels"]
+    )
+    test_dataset.set_format(
+        "torch", columns=["input_ids", "attention_mask", "labels"]
+    )
 
     return train_dataset, test_dataset
 
 
 def fine_tune_model(
-        train_dataset: Dataset, test_dataset: Dataset, model: AutoModelForSequenceClassification, tokenizer: AutoTokenizer, 
-        model_output_dir: str, hub_model_id: str
-    ) -> Trainer:
+    train_dataset: Dataset,
+    test_dataset: Dataset,
+    model: AutoModelForSequenceClassification,
+    tokenizer: AutoTokenizer,
+    model_output_dir: str,
+    hub_model_id: str,
+) -> Trainer:
     """
-        Fine-tunes the pre-trained model on the training dataset and evaluates it on the testing dataset.
+        Fine-tunes the pre-trained model on the training dataset
+        and evaluates it on the testing dataset.
         Params:
-            train_dataset (Dataset): The tokenized training dataset as a Hugging Face Dataset.
-            test_dataset (Dataset): The tokenized testing dataset as a Hugging Face Dataset.
-            model (AutoModelForSequenceClassification): The pre-trained model to be fine-tuned.
-            tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
-            model_output_dir (str): The directory where the fine-tuned model and tokenizer will be saved.
-            hub_model_id (str): The model repository ID to be used for pushing the model to the Hugging Face Hub.
+            train_dataset (Dataset): The tokenized training dataset.
+            test_dataset (Dataset): The tokenized testing dataset.
+            model (AutoModelForSequenceClassification): The pre-trained
+                model to be fine-tuned.
+            tokenizer (AutoTokenizer): The tokenizer to use.
+            model_output_dir (str): The directory where the fine-tuned
+                model and tokenizer will be saved.
+            hub_model_id (str): The model repository ID for pushing
+                the model to the Hugging Face Hub.
         Returns:
             Trainer: The Trainer object after fine-tuning the model.
         Raises:
-            FineTuningError: If there is an error during the fine-tuning process.
+            FineTuningError: If there is an error during fine-tuning.
     """
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
@@ -132,27 +171,37 @@ def fine_tune_model(
 
 
 def save_and_push_model_on_hf_hub(
-        trainer: Trainer, tokenizer: AutoTokenizer, model_output_dir: str, quality_thresholds: dict
-    ) -> None:
+    trainer: Trainer,
+    tokenizer: AutoTokenizer,
+    model_output_dir: str,
+    quality_thresholds: dict,
+) -> None:
     """
-        Saves the fine-tuned model and tokenizer to the specified directory and pushes it to the Hugging Face Hub if and only if it passes the quality gate.
+        Saves the fine-tuned model and tokenizer to the specified
+        directory and pushes it to the Hugging Face Hub if and only
+        if it passes the quality gate.
         Params:
-            trainer (Trainer): The Trainer object after fine-tuning the model.
-            tokenizer (AutoTokenizer): The tokenizer used for tokenizing the datasets.
-            model_output_dir (str): The directory where the model and tokenizer will be saved.
-            quality_thresholds (dict): A dictionary containing the minimum thresholds for accuracy and F1 score to decide whether to push the model to the Hugging Face Hub.
+            trainer (Trainer): The Trainer object after fine-tuning.
+            tokenizer (AutoTokenizer): The tokenizer to use.
+            model_output_dir (str): The directory where the model and
+                tokenizer will be saved.
+            quality_thresholds (dict): A dictionary containing the
+                minimum thresholds for accuracy and F1 score to decide
+                whether to push the model to the Hugging Face Hub.
     """
     try:
         trainer.save_model(model_output_dir)
         tokenizer.save_pretrained(model_output_dir)
 
-        is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(trainer, quality_thresholds)
-    
+        is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(
+            trainer, quality_thresholds
+        )
+
         if is_ready_to_push:
             commit_message = (
-                #f"dataset=tweet_eval | "
-                #f"train_size={train_config['train_size']} | "
-                #f"epochs={train_config['num_epochs']} | "
+                # f"dataset=tweet_eval | "
+                # f"train_size={train_config['train_size']} | "
+                # f"epochs={train_config['num_epochs']} | "
                 f"f1_macro={metrics['f1_macro']:.2f} | "
                 f"accuracy={metrics['accuracy']:.4f}"
             )
@@ -160,9 +209,13 @@ def save_and_push_model_on_hf_hub(
             try:
                 trainer.push_to_hub(commit_message)
             except Exception as e:
-                raise PushingToHubError(f"Error pushing model to Hugging Face Hub: {e}")
+                raise PushingToHubError(
+                    f"Error pushing model to Hugging Face Hub: {e}"
+                )
 
-    except (EvaluationError, PushingToHubError) as e:
+    except (EvaluationError, PushingToHubError):
         raise
     except Exception as e:
-        raise Exception(f"Unexpected error saving model or tokenizer: {e}")
+        raise Exception(
+            f"Unexpected error saving model or tokenizer: {e}"
+        )
