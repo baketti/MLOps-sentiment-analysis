@@ -4,8 +4,13 @@ from utils.exceptions import PredictionError
 
 def test_predict_success(client):
     mock_result = {"label": "positive", "score": 0.95}
-    with patch("api.routers.prediction.make_prediction", return_value=mock_result):
-        response = client.post("/predict", json={"text": "I love this product!"})
+    with patch(
+        "api.routers.prediction.make_prediction",
+        return_value=mock_result
+    ):
+        response = client.post(
+            "/predict", json={"text": "I love this product!"}
+        )
     assert response.status_code == 200
     data = response.json()
     assert data["label"] == "positive"
@@ -13,7 +18,10 @@ def test_predict_success(client):
 
 
 def test_predict_error(client):
-    with patch("api.routers.prediction.make_prediction", side_effect=PredictionError("model failed")):
+    with patch(
+        "api.routers.prediction.make_prediction",
+        side_effect=PredictionError("model failed")
+    ):
         response = client.post("/predict", json={"text": "test"})
     assert response.status_code == 500
     assert "model failed" in response.json()["detail"]

@@ -6,7 +6,9 @@ from utils.exceptions import EvaluationError
 
 def test_evaluate_passes_thresholds():
     mock_trainer = MagicMock()
-    mock_trainer.evaluate.return_value = {"eval_accuracy": 0.85, "eval_f1_macro": 0.80}
+    mock_trainer.evaluate.return_value = {
+        "eval_accuracy": 0.85, "eval_f1_macro": 0.80
+    }
     is_ready, metrics = evaluate_hf_fine_tuned_model(
         mock_trainer, {"accuracy_min": 0.7, "f1_min": 0.7}
     )
@@ -17,7 +19,9 @@ def test_evaluate_passes_thresholds():
 
 def test_evaluate_fails_thresholds():
     mock_trainer = MagicMock()
-    mock_trainer.evaluate.return_value = {"eval_accuracy": 0.5, "eval_f1_macro": 0.4}
+    mock_trainer.evaluate.return_value = {
+        "eval_accuracy": 0.5, "eval_f1_macro": 0.4
+    }
     is_ready, _ = evaluate_hf_fine_tuned_model(
         mock_trainer, {"accuracy_min": 0.7, "f1_min": 0.7}
     )
@@ -27,5 +31,10 @@ def test_evaluate_fails_thresholds():
 def test_evaluate_error():
     mock_trainer = MagicMock()
     mock_trainer.evaluate.side_effect = Exception("evaluation failed")
-    with pytest.raises(EvaluationError, match="Error during fine-tuned model evaluation"):
-        evaluate_hf_fine_tuned_model(mock_trainer, {"accuracy_min": 0.7, "f1_min": 0.7})
+    with pytest.raises(
+        EvaluationError,
+        match="Error during fine-tuned model evaluation"
+    ):
+        evaluate_hf_fine_tuned_model(
+            mock_trainer, {"accuracy_min": 0.7, "f1_min": 0.7}
+        )

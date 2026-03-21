@@ -1,10 +1,20 @@
-from training.train_model import get_train_test_datasets, tokenize_train_test_datasets, fine_tune_model, save_and_push_model_on_hf_hub
+from training.train_model import (
+    get_train_test_datasets,
+    tokenize_train_test_datasets,
+    fine_tune_model,
+    save_and_push_model_on_hf_hub,
+)
+
 
 def train_and_save_model(app_config: dict) -> None:
     """
-        Orchestrates the entire process of loading the dataset, tokenizing it, fine-tuning the model, and saving/pushing it to the Hugging Face Hub.
+        Orchestrates the entire process of loading the dataset,
+        tokenizing it, fine-tuning the model, and saving/pushing it
+        to the Hugging Face Hub.
         Params:
-            app_config (dict): The application configuration dictionary containing all necessary parameters and objects for training and saving the model.
+            app_config (dict): The application configuration dictionary
+                containing all necessary parameters and objects for
+                training and saving the model.
     """
     model = app_config.get("model_object")
     tokenizer = app_config.get("tokenizer_object")
@@ -15,10 +25,17 @@ def train_and_save_model(app_config: dict) -> None:
     hub_model_id = app_config.get("hf_hub_model_id")
     quality_thresholds = app_config.get("quality_thresholds")
 
-    train_dataset, test_dataset = get_train_test_datasets(dataset_name, file_path)
-    train_dataset, test_dataset = tokenize_train_test_datasets(train_dataset, test_dataset, tokenizer, label2id)
+    train_dataset, test_dataset = get_train_test_datasets(
+        dataset_name, file_path
+    )
+    train_dataset, test_dataset = tokenize_train_test_datasets(
+        train_dataset, test_dataset, tokenizer, label2id
+    )
 
-    trainer = fine_tune_model(train_dataset, test_dataset, model, tokenizer, model_output_dir, hub_model_id)
+    trainer = fine_tune_model(
+        train_dataset, test_dataset, model, tokenizer,
+        model_output_dir, hub_model_id
+    )
 
     save_and_push_model_on_hf_hub(
         trainer,
