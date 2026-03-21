@@ -7,6 +7,7 @@ router = APIRouter(
     tags=["Training"]
 )
 
+
 @router.post("")
 async def train(request: Request) -> TrainingResponse:
     try:

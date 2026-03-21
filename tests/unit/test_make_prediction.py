@@ -6,13 +6,18 @@ from utils.exceptions import PredictionError
 
 def test_create_sentiment_pipeline_success():
     mock_pipeline = MagicMock()
-    with patch("predicting.make_prediction.pipeline", return_value=mock_pipeline):
+    with patch(
+        "predicting.make_prediction.pipeline", return_value=mock_pipeline
+    ):
         result = create_sentiment_pipeline("test-model")
     assert result == mock_pipeline
 
 
 def test_create_sentiment_pipeline_error():
-    with patch("predicting.make_prediction.pipeline", side_effect=Exception("network error")):
+    with patch(
+        "predicting.make_prediction.pipeline",
+        side_effect=Exception("network error")
+    ):
         with pytest.raises(PredictionError, match="Error loading model"):
             create_sentiment_pipeline("test-model")
 

@@ -1,13 +1,15 @@
 from transformers import pipeline, TextClassificationPipeline
 from utils.exceptions import PredictionError
 
+
 def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
     """
-        Creates a Hugging Face pipeline for text classification using the specified model and tokenizer.
+        Creates a Hugging Face pipeline for text classification
+        using the specified model and tokenizer.
         Returns:
-            TextClassificationPipeline: A Hugging Face pipeline for text classification.
+            TextClassificationPipeline: A pipeline for text classification.
         Raises:
-            PredictionError: If there is an error loading the model or tokenizer.
+            PredictionError: If there is an error loading the model.
     """
     try:
         return pipeline(
@@ -23,12 +25,13 @@ def create_sentiment_pipeline(model_name: str) -> TextClassificationPipeline:
 
 def predict(text: str, pipeline: TextClassificationPipeline) -> dict:
     """
-        Predicts the sentiment of the given text using the provided pipeline.
+        Predicts the sentiment of the given text using the pipeline.
         Params:
             text (str): The input text to analyze.
-            pipeline (TextClassificationPipeline): The Hugging Face pipeline for text classification.
+            pipeline (TextClassificationPipeline): The pipeline for
+                text classification.
         Returns:
-            dict: A dictionary containing the predicted label and its corresponding score.
+            dict: A dictionary containing the predicted label and score.
         Raises:
             PredictionError: If there is an error during prediction.
     """
@@ -38,4 +41,3 @@ def predict(text: str, pipeline: TextClassificationPipeline) -> dict:
         return best
     except Exception as e:
         raise PredictionError(f"Error during prediction: {e}")
-

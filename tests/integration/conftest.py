@@ -17,9 +17,16 @@ FAKE_CONFIG = {
 
 @pytest.fixture
 def client():
-    with patch("api.main.load_config", side_effect=lambda: copy.deepcopy(FAKE_CONFIG)), \
-         patch("api.main.AutoTokenizer.from_pretrained", return_value=MagicMock()), \
-         patch("api.main.AutoModelForSequenceClassification.from_pretrained", return_value=MagicMock()):
+    with patch(
+        "api.main.load_config",
+        side_effect=lambda: copy.deepcopy(FAKE_CONFIG)
+    ), patch(
+        "api.main.AutoTokenizer.from_pretrained",
+        return_value=MagicMock()
+    ), patch(
+        "api.main.AutoModelForSequenceClassification.from_pretrained",
+        return_value=MagicMock()
+    ):
         from api.main import app
         with TestClient(app) as c:
             yield c

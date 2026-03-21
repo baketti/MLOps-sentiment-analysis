@@ -7,7 +7,9 @@ from utils.exceptions import ConfigLoadError
 
 def test_load_config_valid():
     content = "hf_model:\n  name: test-model\n"
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False
+    ) as f:
         f.write(content)
         path = f.name
     try:
@@ -24,7 +26,9 @@ def test_load_config_file_not_found():
 
 def test_load_config_invalid_yaml():
     content = "key: [\n  unclosed bracket"
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False
+    ) as f:
         f.write(content)
         path = f.name
     try:

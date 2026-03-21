@@ -1,8 +1,10 @@
 class InvalidDatasetStructureError(Exception):
     """
-        Exception raised when the dataset structure is invalid or does not contain the required columns.
+        Exception raised when the dataset structure is invalid
+        or does not contain the required columns.
     """
     pass
+
 
 class ConfigLoadError(Exception):
     """
@@ -10,35 +12,43 @@ class ConfigLoadError(Exception):
     """
     pass
 
+
 class LoadingDatasetError(Exception):
     """
         Exception raised when there is an error loading the dataset.
     """
     pass
 
+
 class FineTuningError(Exception):
     """
-        Exception raised when there is an error during the fine-tuning process.
+        Exception raised when there is an error during fine-tuning.
     """
     pass
+
 
 class PushingToHubError(Exception):
     """
-        Exception raised when there is an error pushing the model to the Hugging Face Hub.
+        Exception raised when there is an error pushing the model
+        to the Hugging Face Hub.
     """
     pass
+
 
 class ModelLoadingError(Exception):
     """
-        Exception raised when there is an error loading a model or tokenizer.
+        Exception raised when there is an error loading a model
+        or tokenizer.
     """
     pass
 
+
 class PredictionError(Exception):
     """
-        Exception raised when there is an error during sentiment prediction.
+        Exception raised when there is an error during prediction.
     """
     pass
+
 
 class EvaluationError(Exception):
     """
