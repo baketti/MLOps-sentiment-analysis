@@ -14,10 +14,10 @@ async def predict(
 ) -> PredictResponseBody:
     try:
         app_config = request.app.state.config
-        result = make_prediction(app_config, payload.text)
+        result, model_name = make_prediction(app_config, payload.text)
 
         return PredictResponseBody(
-            model_used=app_config["hf_model"]["name"],
+            model_used=model_name,
             label=result["label"],
             score=result["score"],
         )
