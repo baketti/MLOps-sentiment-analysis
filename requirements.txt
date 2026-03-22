@@ -2,13 +2,11 @@ scikit-learn
 mlflow
 fastapi
 uvicorn
-prometheus-client
 apache-airflow
 pandas
 pydantic
 kagglehub[pandas-datasets]
 transformers
-transformers[torch]
 datasets
 pytest
 flake8
