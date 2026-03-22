@@ -20,4 +20,4 @@ ENV PORT=8000
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.main:app", "--host", "$HOST", "--port", "$PORT"]
+CMD ["sh", "-c", "uvicorn api.main:app --host ${HOST} --port ${PORT}"]
