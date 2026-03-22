@@ -3,7 +3,7 @@ from utils.exceptions import PredictionError
 
 
 def test_predict_success(client):
-    mock_result = {"label": "positive", "score": 0.95}
+    mock_result = ({"label": "positive", "score": 0.95}, "model_name")
     with patch(
         "api.routers.prediction.make_prediction",
         return_value=mock_result
