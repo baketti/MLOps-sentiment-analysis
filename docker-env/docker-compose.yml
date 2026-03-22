@@ -35,6 +35,8 @@ services:
       - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
     volumes:
       - grafana_storage:/var/lib/grafana
+    depends_on:
+      - mlflow
 
 volumes:
   models_data:
