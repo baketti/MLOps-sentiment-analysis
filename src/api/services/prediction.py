@@ -12,8 +12,11 @@ def make_prediction(app_config, text: str) -> dict:
                 containing all necessary parameters for prediction.
             text (str): The input text to analyze.
         Returns:
-            dict: A dictionary containing the predicted label and its
-                corresponding score.
+            prediction (dict): A dictionary containing the predicted label and
+                its corresponding score.
+            model_name (str): The name of the model used for prediction.
+        Raises:
+            PredictionError: If there is an error during the prediction
     """
     try:
         base_model_name = app_config["hf_model"]["name"]
@@ -23,7 +26,7 @@ def make_prediction(app_config, text: str) -> dict:
         sentiment_pipeline = create_sentiment_pipeline(model_name)
         prediction = predict(text, sentiment_pipeline)
 
-        return prediction
+        return prediction, model_name
     except PredictionError as e:
         raise e
     except Exception as e:
