@@ -10,3 +10,4 @@ transformers
 datasets
 pytest
 flake8
+accelerate>=1.1.0
