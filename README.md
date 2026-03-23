@@ -46,7 +46,7 @@ Il codice segue le convenzioni di stile **PEP 8** ed è validato ad ogni esecuzi
 5. Valutazione del modello fine-tuned rispetto alle soglie di qualità definite in `config.yaml`:
    - `f1_min: 0.7`
    - `accuracy_min: 0.7`
-6. Se entrambe le soglie sono superate, il modello viene pubblicato su Hugging Face Hub; altrimenti viene salvato solo in locale
+6. Se entrambe le soglie sono superate, il modello viene pubblicato su Hugging Face Hub; altrimenti viene salvato solo in locale (in un checkpoint in /models o in mlflow.db)
 
 ### Flusso di predizione (`POST /predict`)
 
