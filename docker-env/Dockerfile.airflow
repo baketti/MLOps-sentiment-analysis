@@ -1,0 +1,8 @@
+FROM apache/airflow:2.11.2
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+
+USER airflow
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir transformers datasets mlflow scikit-learn 'kagglehub[pandas-datasets]' pandas accelerate

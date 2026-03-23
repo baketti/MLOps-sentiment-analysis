@@ -55,8 +55,39 @@ services:
       - mlflow
       - prometheus
 
+  airflow:
+    build:
+      context: ..
+      dockerfile: docker-env/Dockerfile.airflow
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../.env
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=sentiment-mlops-secret
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_OUTPUT_DIR=/opt/airflow/models
+      - PYTHONPATH=/opt/airflow/src
+    volumes:
+      - ../dags:/opt/airflow/dags
+      - ../src:/opt/airflow/src
+      - ../config.yaml:/opt/airflow/config.yaml
+      - airflow_data:/opt/airflow
+    command: >
+      bash -c "
+        airflow db init &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com 2>/dev/null || true &&
+        airflow scheduler & airflow webserver
+      "
+    depends_on:
+      - mlflow
+
 volumes:
   models_data:
   mlflow_data:
   grafana_storage:
   prometheus_data:
+  airflow_data:
