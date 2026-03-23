@@ -175,7 +175,7 @@ def save_and_push_model_on_hf_hub(
     tokenizer: AutoTokenizer,
     model_output_dir: str,
     quality_thresholds: dict,
-) -> None:
+) -> dict:
     """
         Saves the fine-tuned model and tokenizer to the specified
         directory and pushes it to the Hugging Face Hub if and only
@@ -188,6 +188,9 @@ def save_and_push_model_on_hf_hub(
             quality_thresholds (dict): A dictionary containing the
                 minimum thresholds for accuracy and F1 score to decide
                 whether to push the model to the Hugging Face Hub.
+        Returns:
+            dict: A dictionary containing the evaluation metrics
+                (accuracy, f1_macro, loss).
     """
     try:
         trainer.save_model(model_output_dir)
@@ -212,6 +215,8 @@ def save_and_push_model_on_hf_hub(
                 raise PushingToHubError(
                     f"Error pushing model to Hugging Face Hub: {e}"
                 )
+
+        return metrics
 
     except (EvaluationError, PushingToHubError):
         raise
