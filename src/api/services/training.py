@@ -6,7 +6,7 @@ from training.train_model import (
 )
 
 
-def train_and_save_model(app_config: dict) -> None:
+def train_and_save_model(app_config: dict) -> dict:
     """
         Orchestrates the entire process of loading the dataset,
         tokenizing it, fine-tuning the model, and saving/pushing it
@@ -15,6 +15,9 @@ def train_and_save_model(app_config: dict) -> None:
             app_config (dict): The application configuration dictionary
                 containing all necessary parameters and objects for
                 training and saving the model.
+        Returns:
+            dict: A dictionary containing the evaluation metrics
+                (accuracy, f1_macro, loss).
     """
     model = app_config.get("model_object")
     tokenizer = app_config.get("tokenizer_object")
@@ -37,7 +40,7 @@ def train_and_save_model(app_config: dict) -> None:
         model_output_dir, hub_model_id
     )
 
-    save_and_push_model_on_hf_hub(
+    return save_and_push_model_on_hf_hub(
         trainer,
         tokenizer,
         model_output_dir,
