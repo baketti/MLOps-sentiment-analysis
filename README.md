@@ -45,8 +45,8 @@ Il codice segue le convenzioni di stile **PEP 8** ed è validato ad ogni esecuzi
 3. Tokenizzazione con `AutoTokenizer` (`max_length=128`, padding dinamico)
 4. Fine-tuning del modello con HuggingFace `Trainer`; le metriche vengono riportate automaticamente a MLflow
 5. Valutazione del modello fine-tuned rispetto alle soglie di qualità definite in `config.yaml`:
-   - `f1_min: 0.7`
-   - `accuracy_min: 0.7`
+   - `f1_min: 0.85`
+   - `accuracy_min: 0.85`
 6. Se entrambe le soglie sono superate, il modello viene pubblicato su Hugging Face Hub; altrimenti viene salvato solo in locale
 
 ### Flusso di predizione (`POST /predict`)
@@ -141,8 +141,8 @@ hf_model:
 hf_hub_model_id: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
 
 quality_thresholds:
-  f1_min: 0.7
-  accuracy_min: 0.7
+  f1_min: 0.85
+  accuracy_min: 0.85
 
 kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
@@ -181,6 +181,7 @@ Servizi disponibili:
 - MLflow UI: `http://localhost:5000`
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (credenziali di default: `admin` / `admin`)
+- Airflow: `http://localhost:8080` (credenziali di default: `admin` / `admin`)
 
 ---
 
@@ -254,8 +255,8 @@ The codebase follows **PEP 8** style conventions and is validated at every CI ru
 3. Tokenize with `AutoTokenizer` (`max_length=128`, dynamic padding)
 4. Fine-tune the model using HuggingFace `Trainer`; metrics are reported to MLflow automatically
 5. Evaluate the fine-tuned model against the quality thresholds defined in `config.yaml`:
-   - `f1_min: 0.7`
-   - `accuracy_min: 0.7`
+   - `f1_min: 0.85`
+   - `accuracy_min: 0.85`
 6. If both thresholds are met, the model is pushed to Hugging Face Hub; otherwise it is saved locally only
 
 ### Prediction flow (`POST /predict`)
@@ -350,8 +351,8 @@ hf_model:
 hf_hub_model_id: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
 
 quality_thresholds:
-  f1_min: 0.7
-  accuracy_min: 0.7
+  f1_min: 0.85
+  accuracy_min: 0.85
 
 kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
@@ -390,6 +391,7 @@ Services:
 - MLflow UI: `http://localhost:5000`
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (default credentials: `admin` / `admin`)
+- Airflow: `http://localhost:8080` (default credentials: `admin` / `admin`)
 
 ---
 
