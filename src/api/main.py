@@ -8,7 +8,7 @@ from transformers import (
 )
 from utils.config import load_config
 from utils.exceptions import ConfigLoadError, ModelLoadingError
-from api.routers import training, prediction
+from api.routers import training, prediction, metrics
 
 
 @asynccontextmanager
@@ -63,3 +63,4 @@ app = FastAPI(title="Sentiment Analysis API", lifespan=lifespan)
 
 app.include_router(training.router)
 app.include_router(prediction.router)
+app.include_router(metrics.router)

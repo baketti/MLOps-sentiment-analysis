@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from api.schemas.training import TrainingResponse
 from api.services.training import train_and_save_model
+from api.utils.metrics import model_f1_macro, model_accuracy, model_eval_loss
 
 router = APIRouter(
     prefix="/train",
@@ -12,7 +13,10 @@ router = APIRouter(
 async def train(request: Request) -> TrainingResponse:
     try:
         app_config = request.app.state.config
-        train_and_save_model(app_config)
+        metrics = train_and_save_model(app_config)
+        model_f1_macro.set(metrics["f1_macro"])
+        model_accuracy.set(metrics["accuracy"])
+        model_eval_loss.set(metrics["loss"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
