@@ -45,9 +45,9 @@ Il codice segue le convenzioni di stile **PEP 8** ed è validato ad ogni esecuzi
 3. Tokenizzazione con `AutoTokenizer` (`max_length=128`, padding dinamico)
 4. Fine-tuning del modello con HuggingFace `Trainer`; le metriche vengono riportate automaticamente a MLflow
 5. Valutazione del modello fine-tuned rispetto alle soglie di qualità definite in `config.yaml`:
-   - `f1_min: 0.7`
-   - `accuracy_min: 0.7`
-6. Se entrambe le soglie sono superate, il modello viene pubblicato su Hugging Face Hub; altrimenti viene salvato solo in locale (in un checkpoint in /models e in mlflow.db)
+   - `f1_min: 0.85`
+   - `accuracy_min: 0.85`
+6. Se entrambe le soglie sono superate, il modello viene pubblicato su Hugging Face Hub; altrimenti viene salvato solo in locale
 
 ### Flusso di predizione (`POST /predict`)
 
@@ -141,8 +141,8 @@ hf_model:
 hf_hub_model_id: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
 
 quality_thresholds:
-  f1_min: 0.7
-  accuracy_min: 0.7
+  f1_min: 0.85
+  accuracy_min: 0.85
 
 kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
@@ -181,6 +181,7 @@ Servizi disponibili:
 - MLflow UI: `http://localhost:5000`
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (credenziali di default: `admin` / `admin`)
+- Airflow: `http://localhost:8080` (credenziali di default: `admin` / `admin`)
 
 ---
 
@@ -197,7 +198,7 @@ Prometheus persiste i valori che ha già scrappato nel volume `prometheus_data`,
 
 ## Miglioramenti Futuri
 
-- **Persistenza metriche di training**: al riavvio di FastAPI i gauge Prometheus si azzerano. Possibili soluzioni migliori includono rileggere le metriche dell'ultimo run MLflow al boot per ripopolare i gauge, oppure persistere i valori su un database esterno (es. Redis, PostgreSQL) da cui FastAPI li recupera all'avvio.
+- **Persistenza metriche di training**: al riavvio di FastAPI i gauge Prometheus si azzerano. Possibili soluzioni migliori includono rileggere le metriche dell'ultimo run MLflow al boot per ripopolare i gauge, o persistere i valori su un database esterno (es. PostgreSQL) da cui FastAPI li recupera all'avvio, oppure le metriche potrebbero essere visualizzate direttamente dal DB senza passare per Prometheus.
 - **Refactoring pipeline Airflow → FastAPI**: attualmente il container Airflow installa autonomamente le stesse dipendenze ML (PyTorch, Transformers, ecc.) già presenti nel container FastAPI, rendendo il build complessivamente più oneroso in termini di tempo e risorse. Possibili soluzioni migliori includono esporre endpoint dedicati su FastAPI per ogni step della pipeline (`/pipeline/download`, `/pipeline/fine-tune`, ecc.) in modo che i task Airflow eseguano semplici chiamate HTTP, eliminando la necessità di installare dipendenze ML nel container Airflow.
 - **Caricamento dataset personalizzato**: consentire agli utenti di fornire un proprio dataset al momento del training per abilitare il retraining su dati specifici del dominio senza modificare il codice.
 - **Qualità del codice**: introdurre design pattern (es. Repository, Strategy, Factory) per rendere il codice più manutenibile e scalabile all'aumentare dei modelli e delle sorgenti dati supportati.
@@ -254,8 +255,8 @@ The codebase follows **PEP 8** style conventions and is validated at every CI ru
 3. Tokenize with `AutoTokenizer` (`max_length=128`, dynamic padding)
 4. Fine-tune the model using HuggingFace `Trainer`; metrics are reported to MLflow automatically
 5. Evaluate the fine-tuned model against the quality thresholds defined in `config.yaml`:
-   - `f1_min: 0.7`
-   - `accuracy_min: 0.7`
+   - `f1_min: 0.85`
+   - `accuracy_min: 0.85`
 6. If both thresholds are met, the model is pushed to Hugging Face Hub; otherwise it is saved locally only
 
 ### Prediction flow (`POST /predict`)
@@ -350,8 +351,8 @@ hf_model:
 hf_hub_model_id: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
 
 quality_thresholds:
-  f1_min: 0.7
-  accuracy_min: 0.7
+  f1_min: 0.85
+  accuracy_min: 0.85
 
 kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
@@ -390,6 +391,7 @@ Services:
 - MLflow UI: `http://localhost:5000`
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (default credentials: `admin` / `admin`)
+- Airflow: `http://localhost:8080` (default credentials: `admin` / `admin`)
 
 ---
 
@@ -406,7 +408,7 @@ Prometheus persists already-scraped values in the `prometheus_data` volume, but 
 
 ## Future Improvements
 
-- **Training metrics persistence**: on FastAPI restart, Prometheus gauges reset to zero. Possible better solutions include reading the latest MLflow run metrics at boot to repopulate the gauges, or persisting values in an external database (e.g. Redis, PostgreSQL) from which FastAPI recovers them on startup.
+- **Training metrics persistence**: on FastAPI restart, Prometheus gauges reset to zero. Possible better solutions include reading the latest MLflow run metrics at boot to repopulate the gauges, or persisting values in an external database (e.g. PostgreSQL) from which FastAPI recovers them on startup, or metrics could be visualised directly from the database without going through Prometheus.
 - **Airflow → FastAPI pipeline refactoring**: the Airflow container currently installs the same ML dependencies (PyTorch, Transformers, etc.) already present in the FastAPI container, making the overall build more expensive in terms of time and resources. Possible better solutions include exposing dedicated FastAPI endpoints for each pipeline step (`/pipeline/download`, `/pipeline/fine-tune`, etc.) so that Airflow tasks make simple HTTP calls, eliminating the need to install ML dependencies in the Airflow container.
 - **Custom dataset loading**: allow users to provide their own dataset at training time to enable retraining on domain-specific data without modifying the codebase.
 - **Code quality**: introduce design patterns (e.g. Repository, Strategy, Factory) to make the codebase more maintainable and scalable as the number of supported models and data sources grows.
