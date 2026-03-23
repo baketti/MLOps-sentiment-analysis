@@ -65,6 +65,7 @@ def evaluate_hf_fine_tuned_model(
 
         accuracy = eval_results.get("eval_accuracy", 0)
         f1_macro = eval_results.get("eval_f1_macro", 0)
+        loss = eval_results.get("eval_loss", 0)
 
         if (accuracy >= accuracy_threshold) and (
             f1_macro >= f1_score_threshold
@@ -73,7 +74,8 @@ def evaluate_hf_fine_tuned_model(
 
         return is_ready_for_hf_hub, {
             "accuracy": accuracy,
-            "f1_macro": f1_macro
+            "f1_macro": f1_macro,
+            "loss": loss,
         }
     except Exception as e:
         raise EvaluationError(
