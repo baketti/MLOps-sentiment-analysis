@@ -36,6 +36,7 @@ Il codice segue le convenzioni di stile **PEP 8** ed è validato ad ogni esecuzi
 | `POST` | `/train` | Avvia la pipeline completa di fine-tuning sul dataset Kaggle configurato |
 | `POST` | `/predict` | Restituisce l'etichetta di sentiment e il punteggio di confidenza per un testo in input |
 | `GET` | `/metrics` | Espone le metriche nel formato Prometheus per lo scraping |
+| `POST` | `/metrics/training` | Aggiorna i gauge Prometheus con le metriche dell'ultimo training (usato dal DAG Airflow) |
 
 ### Flusso di training (`POST /train`)
 
@@ -97,11 +98,19 @@ sentiment-mlops/
 ├── tests/
 │   ├── unit/                          # Test unitari
 │   └── integration/                   # Test di integrazione (FastAPI TestClient)
+├── dags/
+│   └── sentiment_retraining_dag.py    # DAG Airflow: download → fine-tune → update metrics → quality gate → push to hub
 ├── docker-env/
 │   ├── Dockerfile                     # python:3.12-slim, PyTorch CPU-only
-│   └── docker-compose.yml             # FastAPI (8000) + MLflow (5000) + Prometheus (9090) + Grafana (3000)
+│   ├── Dockerfile.airflow             # apache/airflow con dipendenze ML pre-installate
+│   └── docker-compose.yml             # FastAPI (8000) + MLflow (5000) + Prometheus (9090) + Grafana (3000) + Airflow (8080)
 ├── monitoring/
-│   └── prometheus.yml                 # Configurazione scrape Prometheus
+│   ├── prometheus.yml                 # Configurazione scrape Prometheus
+│   └── grafana/
+│       ├── provisioning/
+│       │   ├── dashboards/            # Provisioning automatico dashboard
+│       │   └── datasources/           # Provisioning automatico datasource Prometheus
+│       └── dashboards/                # JSON delle dashboard Grafana
 ├── .github/workflows/
 │   ├── ci.yml                         # Lint + test unitari + test integrazione ad ogni push
 │   └── cd.yml                         # Continuous Delivery: build e push immagine Docker su DockerHub al merge su main
@@ -175,8 +184,21 @@ Servizi disponibili:
 
 ---
 
+## Comportamento delle Metriche Prometheus
+
+Le metriche esposte da FastAPI (Counter e Gauge) sono **variabili in memoria nel processo FastAPI**: si azzerano ad ogni riavvio del container.
+
+- **Counter predizioni** (`sentiment_predictions_total`): si azzera al riavvio. Il grafico su Grafana mostra un calo brusco a zero, poi riparte dal conteggio successivo.
+- **Gauge di training** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): si azzerano al riavvio. Vengono ripopolati solo al termine del prossimo training (via `POST /train` o via DAG Airflow).
+
+Prometheus persiste i valori che ha già scrappato nel volume `prometheus_data`, ma non può recuperare i valori persi in memoria dopo un riavvio di FastAPI.
+
+---
+
 ## Miglioramenti Futuri
 
+- **Persistenza metriche di training**: al riavvio di FastAPI i gauge Prometheus si azzerano. Possibili soluzioni migliori includono rileggere le metriche dell'ultimo run MLflow al boot per ripopolare i gauge, oppure persistere i valori su un database esterno (es. Redis, PostgreSQL) da cui FastAPI li recupera all'avvio.
+- **Refactoring pipeline Airflow → FastAPI**: attualmente il container Airflow installa autonomamente le stesse dipendenze ML (PyTorch, Transformers, ecc.) già presenti nel container FastAPI, rendendo il build complessivamente più oneroso in termini di tempo e risorse. Possibili soluzioni migliori includono esporre endpoint dedicati su FastAPI per ogni step della pipeline (`/pipeline/download`, `/pipeline/fine-tune`, ecc.) in modo che i task Airflow eseguano semplici chiamate HTTP, eliminando la necessità di installare dipendenze ML nel container Airflow.
 - **Caricamento dataset personalizzato**: consentire agli utenti di fornire un proprio dataset al momento del training per abilitare il retraining su dati specifici del dominio senza modificare il codice.
 - **Qualità del codice**: introdurre design pattern (es. Repository, Strategy, Factory) per rendere il codice più manutenibile e scalabile all'aumentare dei modelli e delle sorgenti dati supportati.
 - **Selezione del modello per l'inferenza**: esporre un meccanismo per scegliere quale versione del modello utilizzare per la predizione — il modello base, l'ultimo modello fine-tuned o una versione specifica dalla cronologia dei fine-tuning memorizzata su Hugging Face Hub.
@@ -223,6 +245,7 @@ The codebase follows **PEP 8** style conventions and is validated at every CI ru
 | `POST` | `/train` | Triggers the full fine-tuning pipeline on the configured Kaggle dataset |
 | `POST` | `/predict` | Returns the sentiment label and confidence score for an input text |
 | `GET` | `/metrics` | Exposes metrics in Prometheus format for scraping |
+| `POST` | `/metrics/training` | Updates Prometheus gauges with the latest training metrics (called by the Airflow DAG) |
 
 ### Training flow (`POST /train`)
 
@@ -284,11 +307,19 @@ sentiment-mlops/
 ├── tests/
 │   ├── unit/                          # Unit tests
 │   └── integration/                   # Integration tests (FastAPI TestClient)
+├── dags/
+│   └── sentiment_retraining_dag.py    # Airflow DAG: download → fine-tune → update metrics → quality gate → push to hub
 ├── docker-env/
 │   ├── Dockerfile                     # python:3.12-slim, CPU-only PyTorch
-│   └── docker-compose.yml             # FastAPI (8000) + MLflow (5000) + Prometheus (9090) + Grafana (3000)
+│   ├── Dockerfile.airflow             # apache/airflow with pre-installed ML dependencies
+│   └── docker-compose.yml             # FastAPI (8000) + MLflow (5000) + Prometheus (9090) + Grafana (3000) + Airflow (8080)
 ├── monitoring/
-│   └── prometheus.yml                 # Prometheus scrape configuration
+│   ├── prometheus.yml                 # Prometheus scrape configuration
+│   └── grafana/
+│       ├── provisioning/
+│       │   ├── dashboards/            # Automatic dashboard provisioning
+│       │   └── datasources/           # Automatic Prometheus datasource provisioning
+│       └── dashboards/                # Grafana dashboard JSON files
 ├── .github/workflows/
 │   ├── ci.yml                         # Lint + unit + integration tests on every push
 │   └── cd.yml                         # Continuous Delivery: builds and pushes Docker image to DockerHub on main
@@ -362,8 +393,21 @@ Services:
 
 ---
 
+## Prometheus Metrics Behaviour
+
+Metrics exposed by FastAPI (Counters and Gauges) are **in-memory variables within the FastAPI process**: they reset on every container restart.
+
+- **Prediction counter** (`sentiment_predictions_total`): resets on restart. The Grafana chart shows a sharp drop to zero, then resumes from the next count.
+- **Training gauges** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): reset on restart. They are repopulated only after the next training run (via `POST /train` or the Airflow DAG).
+
+Prometheus persists already-scraped values in the `prometheus_data` volume, but cannot recover values lost in FastAPI memory after a container restart.
+
+---
+
 ## Future Improvements
 
+- **Training metrics persistence**: on FastAPI restart, Prometheus gauges reset to zero. Possible better solutions include reading the latest MLflow run metrics at boot to repopulate the gauges, or persisting values in an external database (e.g. Redis, PostgreSQL) from which FastAPI recovers them on startup.
+- **Airflow → FastAPI pipeline refactoring**: the Airflow container currently installs the same ML dependencies (PyTorch, Transformers, etc.) already present in the FastAPI container, making the overall build more expensive in terms of time and resources. Possible better solutions include exposing dedicated FastAPI endpoints for each pipeline step (`/pipeline/download`, `/pipeline/fine-tune`, etc.) so that Airflow tasks make simple HTTP calls, eliminating the need to install ML dependencies in the Airflow container.
 - **Custom dataset loading**: allow users to provide their own dataset at training time to enable retraining on domain-specific data without modifying the codebase.
 - **Code quality**: introduce design patterns (e.g. Repository, Strategy, Factory) to make the codebase more maintainable and scalable as the number of supported models and data sources grows.
 - **Model selection for inference**: expose a mechanism to choose which model version to use for prediction — the base model, the latest fine-tuned model, or a specific version from the fine-tuning history stored on Hugging Face Hub.

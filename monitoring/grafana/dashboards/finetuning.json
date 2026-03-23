@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ffgwiyi6hc2dce"
+        "uid": "$datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -113,7 +113,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ffgwiyi6hc2dce"
+            "uid": "$datasource"
           },
           "editorMode": "builder",
           "expr": "model_eval_accuracy",
@@ -129,7 +129,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ffgwiyi6hc2dce"
+        "uid": "$datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -219,7 +219,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ffgwiyi6hc2dce"
+            "uid": "$datasource"
           },
           "editorMode": "builder",
           "expr": "model_eval_f1_macro",
@@ -237,7 +237,18 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "refresh": 1
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
