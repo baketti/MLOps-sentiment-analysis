@@ -29,6 +29,16 @@ services:
     volumes:
       - mlflow_data:/mlflow
 
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    depends_on:
+      - fastapi
+
   grafana:
     image: grafana/grafana-enterprise
     container_name: grafana
@@ -37,13 +47,16 @@ services:
       - '3000:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
     volumes:
       - grafana_storage:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - mlflow
+      - prometheus
 
 volumes:
   models_data:
-  mlflow_data: 
-  grafana_storage: 
+  mlflow_data:
+  grafana_storage:
+  prometheus_data:
