@@ -9,8 +9,8 @@ hf_model:
 hf_hub_model_id: Emanueleb/twitter-roberta-base-sentiment-latest-finetuned
 
 quality_thresholds:
-  f1_min: 0.7
-  accuracy_min: 0.7
+  f1_min: 0.85
+  accuracy_min: 0.85
 
 kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
