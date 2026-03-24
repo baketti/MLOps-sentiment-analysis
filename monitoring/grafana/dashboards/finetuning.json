@@ -36,8 +36,7 @@
                 "from": 0.87,
                 "result": {
                   "color": "green",
-                  "index": 0,
-                  "text": "Good"
+                  "index": 0
                 },
                 "to": 1
               },
@@ -48,8 +47,7 @@
                 "from": 0.65,
                 "result": {
                   "color": "yellow",
-                  "index": 1,
-                  "text": "Normal"
+                  "index": 1
                 },
                 "to": 0.86
               },
@@ -60,8 +58,7 @@
                 "from": 0,
                 "result": {
                   "color": "red",
-                  "index": 2,
-                  "text": "Bad"
+                  "index": 2
                 },
                 "to": 0.64
               },
@@ -142,8 +139,7 @@
                 "from": 0.68,
                 "result": {
                   "color": "green",
-                  "index": 0,
-                  "text": "Good"
+                  "index": 0
                 },
                 "to": 1
               },
@@ -154,8 +150,7 @@
                 "from": 0.5,
                 "result": {
                   "color": "yellow",
-                  "index": 1,
-                  "text": "Bad but not bad"
+                  "index": 1
                 },
                 "to": 0.67
               },
@@ -166,8 +161,7 @@
                 "from": 0,
                 "result": {
                   "color": "red",
-                  "index": 2,
-                  "text": "Bad"
+                  "index": 2
                 },
                 "to": 0.49
               },
@@ -239,14 +233,14 @@
   "templating": {
     "list": [
       {
-        "name": "datasource",
-        "type": "datasource",
-        "query": "prometheus",
         "current": {},
         "hide": 2,
         "includeAll": false,
-        "multi": false,
-        "refresh": 1
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
       }
     ]
   },
@@ -258,6 +252,6 @@
   "timezone": "browser",
   "title": "Fine tuning",
   "uid": "adcf88q",
-  "version": 4,
+  "version": 8,
   "weekStart": ""
 }
