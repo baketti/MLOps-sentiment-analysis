@@ -122,6 +122,10 @@ sentiment-mlops/
 
 ---
 
+## Test
+
+I test coprono selettivamente le componenti più critiche e testabili del progetto: caricamento e preprocessing del dataset, logica di valutazione e quality gate, endpoint API tramite FastAPI TestClient. La copertura è parziale per la natura del progetto: le parti più rilevanti (fine-tuning, inferenza con modelli HuggingFace, integrazione con servizi esterni come MLflow e Kaggle) richiedono risorse computazionali o dipendenze esterne che rendono il testing automatizzato in CI impraticabile senza mock estensivi.
+
 ## CI/CD
 
 - **CI** (`ci.yml`): eseguita ad ogni push e sulle pull request verso `main`. Passi: checkout del codice, setup Python 3.12, installazione dipendenze, lint con `flake8`, test unitari, test di integrazione.
@@ -360,6 +364,10 @@ sentiment-mlops/
 ```
 
 ---
+
+## Testing
+
+Tests cover only a subset of the most critical project components. Coverage is intentionally partial given the educational nature of the project and serves primarily to demonstrate the continuous integration pipeline in action.
 
 ## CI/CD
 
