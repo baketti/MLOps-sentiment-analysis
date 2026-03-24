@@ -18,7 +18,7 @@ Il codice segue le convenzioni di stile **PEP 8** ed è validato ad ogni esecuzi
 | **PyTorch (CPU)** | Backend di deep learning — build CPU-only per portabilità e riduzione della dimensione dell'immagine |
 | **MLflow** | Tracciamento degli esperimenti, model registry e archiviazione degli artefatti |
 | **FastAPI** | API REST per servire predizioni di sentiment in tempo reale e avviare il training |
-| **Apache Airflow** | Orchestrazione tramite DAG dei pipeline di training e retraining |
+| **Apache Airflow** | Orchestrazione tramite DAG del pipeline di fine-tuning |
 | **Docker** | Containerizzazione di tutti i servizi per ambienti riproducibili |
 | **Prometheus** | Raccolta delle metriche esposte dall'API (latenza di inferenza, predizioni per label, metriche di training) |
 | **Grafana** | Dashboard di monitoraggio per la visualizzazione delle metriche raccolte da Prometheus |
@@ -124,12 +124,12 @@ sentiment-mlops/
 
 ## Test
 
-I test coprono selettivamente le componenti più critiche e testabili del progetto: caricamento e preprocessing del dataset, logica di valutazione e quality gate, endpoint API tramite FastAPI TestClient. La copertura è parziale per la natura del progetto: le parti più rilevanti (fine-tuning, inferenza con modelli HuggingFace, integrazione con servizi esterni come MLflow e Kaggle) richiedono risorse computazionali o dipendenze esterne che rendono il testing automatizzato in CI impraticabile senza mock estensivi.
+I test coprono solo alcune delle componenti più critiche del progetto. La copertura è parziale per la natura didattica del progetto e servono principalmente per la dimostrazione del funzionamento della pipeline di integrazione continua.
 
 ## CI/CD
 
 - **CI** (`ci.yml`): eseguita ad ogni push e sulle pull request verso `main`. Passi: checkout del codice, setup Python 3.12, installazione dipendenze, lint con `flake8`, test unitari, test di integrazione.
-- **CD** (`cd.yml`): implementa la **Continuous Delivery** (non il Deployment). Si attiva automaticamente dopo una CI riuscita su `main`, costruisce l'immagine Docker e la pubblica su DockerHub con il tag `latest` e un tag con lo SHA del commit. Il deployment effettivo su un ambiente target rimane un passaggio manuale.
+- **CD** (`cd.yml`): implementa la **Continuous Delivery** (non il Deployment). Si attiva automaticamente dopo una CI riuscita su `main`, costruisce l'immagine Docker e la pubblica su DockerHub con il tag `latest` e un tag con lo SHA del commit. Il deployment effettivo su un ambiente target rimane un passaggio manuale. Per abilitare il push su DockerHub è necessario configurare i seguenti secrets nel repository GitHub: `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN`.
 
 ---
 
@@ -152,6 +152,8 @@ kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
   file_path: sentiment_analysis.csv
 ```
+
+> **Nota**: `hf_hub_model_id` deve essere aggiornato con il proprio `<username>/<nome-repository>` su Hugging Face Hub prima di eseguire il training.
 
 Variabili d'ambiente (vedi `.env.example`):
 
@@ -363,16 +365,16 @@ sentiment-mlops/
 └── .env.example                       # Environment variable template
 ```
 
----
-
 ## Testing
 
 Tests cover only a subset of the most critical project components. Coverage is intentionally partial given the educational nature of the project and serves primarily to demonstrate the continuous integration pipeline in action.
 
+---
+
 ## CI/CD
 
 - **CI** (`ci.yml`): runs on every push and on pull requests to `main`. Steps: code checkout, Python 3.12 setup, dependency installation, `flake8` lint, unit tests, integration tests.
-- **CD** (`cd.yml`): implements **Continuous Delivery** (not Deployment). It triggers automatically after a successful CI run on `main`, builds the Docker image, and pushes it to DockerHub with the `latest` tag and a commit-SHA tag. Actual deployment to a target environment is a manual step.
+- **CD** (`cd.yml`): implements **Continuous Delivery** (not Deployment). It triggers automatically after a successful CI run on `main`, builds the Docker image, and pushes it to DockerHub with the `latest` tag and a commit-SHA tag. Actual deployment to a target environment is a manual step. To enable the DockerHub push, the following secrets must be configured in the GitHub repository: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
 
 ---
 
@@ -395,6 +397,8 @@ kaggle_dataset:
   name: mdismielhossenabir/sentiment-analysis
   file_path: sentiment_analysis.csv
 ```
+
+> **Note**: `hf_hub_model_id` must be updated with your own `<username>/<repository-name>` on Hugging Face Hub before running training.
 
 Environment variables (see `.env.example`):
 
