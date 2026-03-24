@@ -185,14 +185,43 @@ Servizi disponibili:
 
 ---
 
-## Comportamento delle Metriche Prometheus
+## Monitoraggio e Metriche
 
-Le metriche esposte da FastAPI (Counter e Gauge) sono **variabili in memoria nel processo FastAPI**: si azzerano ad ogni riavvio del container.
+### Flusso dei dati
 
-- **Counter predizioni** (`sentiment_predictions_total`): si azzera al riavvio. Il grafico su Grafana mostra un calo brusco a zero, poi riparte dal conteggio successivo.
-- **Gauge di training** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): si azzerano al riavvio. Vengono ripopolati solo al termine del prossimo training (via `POST /train` o via DAG Airflow).
+```
+FastAPI :8000/metrics          (espone metriche in formato Prometheus)
+    ↓  scrape ogni 15s
+Prometheus :9090               (raccoglie e archivia time-series)
+    ↓  query PromQL
+Grafana :3000                  (visualizza i dati)
+```
 
-Prometheus persiste i valori che ha già scrappato nel volume `prometheus_data`, ma non può recuperare i valori persi in memoria dopo un riavvio di FastAPI.
+FastAPI espone due tipi di metriche:
+- **Counter/Histogram** (`sentiment_predictions_total`, `sentiment_inference_latency_seconds`): aggiornati ad ogni predizione
+- **Gauge** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): aggiornati al termine di ogni training tramite `POST /metrics/training` (chiamato dal DAG Airflow) o `POST /train`
+
+### Datasource Grafana (`$datasource`)
+
+Le dashboard usano la variabile `$datasource`. Grafana la risolve automaticamente cercando il primo datasource Prometheus disponibile.
+
+### Persistenza
+
+| Cosa | Dove vive | `restart` | `down` | `down -v` |
+|---|---|---|---|---|
+| Dati time-series Prometheus | volume `prometheus_data` | ✅ | ✅ | ❌ |
+| Dashboard Grafana (JSON) | bind mount `monitoring/grafana/dashboards/` | ✅ | ✅ | ✅ |
+| Datasource Grafana | bind mount `monitoring/grafana/provisioning/` | ✅ | ✅ | ✅ |
+| Gauge/Counter FastAPI | memoria processo | ❌ | ❌ | ❌ |
+
+- **`restart`**: volumi intatti, dati Prometheus preservati. I gauge FastAPI si azzerano — su Grafana si vedrà un calo brusco a zero.
+- **`down`** (senza `-v`): equivalente a restart, volumi intatti.
+- **`down -v`**: distrugge tutti i volumi incluso `prometheus_data`. Tutti i dati storici Prometheus vengono persi.
+
+### Comportamento dopo un riavvio
+
+- **Counter predizioni** (`sentiment_predictions_total`): si azzera. La metrica sparisce da Prometheus finché non viene effettuata almeno una predizione — Grafana mostra "No data" finché Prometheus non raccoglie il primo valore.
+- **Gauge di training**: si azzerano a `0`. Grafana mostra `0` fino al prossimo training.
 
 ---
 
@@ -395,14 +424,43 @@ Services:
 
 ---
 
-## Prometheus Metrics Behaviour
+## Monitoring and Metrics
 
-Metrics exposed by FastAPI (Counters and Gauges) are **in-memory variables within the FastAPI process**: they reset on every container restart.
+### Data flow
 
-- **Prediction counter** (`sentiment_predictions_total`): resets on restart. The Grafana chart shows a sharp drop to zero, then resumes from the next count.
-- **Training gauges** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): reset on restart. They are repopulated only after the next training run (via `POST /train` or the Airflow DAG).
+```
+FastAPI :8000/metrics          (exposes metrics in Prometheus format)
+    ↓  scrape every 15s
+Prometheus :9090               (collects and stores time-series)
+    ↓  PromQL query
+Grafana :3000                  (visualises the data)
+```
 
-Prometheus persists already-scraped values in the `prometheus_data` volume, but cannot recover values lost in FastAPI memory after a container restart.
+FastAPI exposes two types of metrics:
+- **Counter/Histogram** (`sentiment_predictions_total`, `sentiment_inference_latency_seconds`): updated on every prediction
+- **Gauges** (`model_eval_accuracy`, `model_eval_f1_macro`, `model_eval_loss`): updated at the end of each training run via `POST /metrics/training` (called by the Airflow DAG) or `POST /train`
+
+### Grafana datasource (`$datasource`)
+
+Dashboards use the `$datasource` template variable instead of a hardcoded UID. Grafana resolves it automatically by finding the first available Prometheus datasource — regardless of the internally generated UID. This makes dashboards portable across any installation without modifying the JSON files.
+
+### Persistence
+
+| What | Where it lives | `restart` | `down` | `down -v` |
+|---|---|---|---|---|
+| Prometheus time-series data | `prometheus_data` volume | ✅ | ✅ | ❌ |
+| Grafana dashboards (JSON) | bind mount `monitoring/grafana/dashboards/` | ✅ | ✅ | ✅ |
+| Grafana datasource | bind mount `monitoring/grafana/provisioning/` | ✅ | ✅ | ✅ |
+| FastAPI Gauges/Counters | process memory | ❌ | ❌ | ❌ |
+
+- **`restart`**: volumes intact, Prometheus data preserved. FastAPI gauges reset — Grafana shows a sharp drop to zero.
+- **`down`** (without `-v`): equivalent to restart, volumes intact.
+- **`down -v`**: destroys all volumes including `prometheus_data`. All Prometheus historical data is lost.
+
+### Behaviour after a restart
+
+- **Prediction counter** (`sentiment_predictions_total`): resets to zero. The metric disappears from Prometheus until at least one prediction is made — Grafana shows "No data" until Prometheus collects the first value.
+- **Training gauges**: reset to `0`. Grafana shows `0` until the next training run.
 
 ---
 
