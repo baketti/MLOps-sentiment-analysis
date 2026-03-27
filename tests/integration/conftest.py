@@ -26,6 +26,12 @@ def client():
     ), patch(
         "api.main.AutoModelForSequenceClassification.from_pretrained",
         return_value=MagicMock()
+    ), patch(
+        "api.main.resolve_model",
+        return_value=FAKE_CONFIG["hf_model"]["name"]
+    ), patch(
+        "api.main.hf_pipeline",
+        return_value=MagicMock()
     ):
         from api.main import app
         with TestClient(app) as c:
