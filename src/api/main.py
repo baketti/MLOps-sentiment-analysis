@@ -5,10 +5,13 @@ from fastapi import FastAPI
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
+    pipeline as hf_pipeline,
 )
 from utils.config import load_config
 from utils.exceptions import ConfigLoadError, ModelLoadingError
 from api.routers import training, prediction, metrics
+from api.utils.utilities import resolve_model
+from predicting.make_prediction import create_sentiment_pipeline
 
 
 @asynccontextmanager
@@ -47,6 +50,25 @@ async def lifespan(app: FastAPI):
 
             app.state.config["tokenizer_object"] = tokenizer
             app.state.config["model_object"] = model
+
+            finetuned_model_name = config.get("hf_hub_model_id")
+            prediction_model_name = resolve_model(
+                HF_MODEL_NAME, finetuned_model_name
+            )
+            if prediction_model_name == HF_MODEL_NAME:
+                sentiment_pipeline = hf_pipeline(
+                    task="text-classification",
+                    model=model,
+                    tokenizer=tokenizer,
+                    truncation=True,
+                    max_length=512,
+                )
+            else:
+                sentiment_pipeline = create_sentiment_pipeline(
+                    prediction_model_name
+                )
+            app.state.config["sentiment_pipeline"] = sentiment_pipeline
+            app.state.config["prediction_model_name"] = prediction_model_name
 
         except Exception as e:
             raise ModelLoadingError(

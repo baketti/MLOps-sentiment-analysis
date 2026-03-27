@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from utils.exceptions import FineTuningError
 
 
@@ -7,6 +7,9 @@ def test_train_success(client):
     with patch(
         "api.routers.training.train_and_save_model",
         return_value=mock_metrics
+    ), patch(
+        "api.routers.training.create_sentiment_pipeline",
+        return_value=MagicMock()
     ):
         response = client.post("/train")
     assert response.status_code == 200
