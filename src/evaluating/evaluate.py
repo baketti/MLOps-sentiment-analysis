@@ -1,39 +1,5 @@
-from sklearn.metrics import f1_score, accuracy_score
 from transformers import Trainer
 from utils.exceptions import EvaluationError
-
-
-def evaluate_hf_pretrained_model(pipeline, test_dataset, label2id):
-    """
-        Evaluates the performance of the Hugging Face pretrained model
-        on the test dataset using F1 macro and accuracy metrics.
-        Params:
-            pipeline: The Hugging Face pipeline for text classification.
-            test_dataset: The test dataset as a Hugging Face Dataset.
-            label2id: A dictionary mapping label names to their IDs.
-        Returns:
-            dict: A dictionary containing the F1 macro score and accuracy
-                of the model on the test dataset.
-        Raises:
-            EvaluationError: If there is an error during the evaluation.
-    """
-    try:
-        y_true, y_pred = [], []
-
-        for data in test_dataset:
-            result = pipeline(data["text"])
-            best = max(result, key=lambda x: x["score"])
-            y_true.append(data["label"])
-            y_pred.append(label2id[best["label"].lower()])
-
-        return {
-            "f1_macro": f1_score(y_true, y_pred, average="macro"),
-            "accuracy": accuracy_score(y_true, y_pred)
-        }
-    except Exception as e:
-        raise EvaluationError(
-            f"Error during pretrained model evaluation: {e}"
-        )
 
 
 def evaluate_hf_fine_tuned_model(
