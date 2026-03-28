@@ -9,7 +9,9 @@ from transformers import (
     DataCollatorWithPadding,
 )
 from loading.load_dataset import KaggleDatasetLoader
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import (
+    f1_score, accuracy_score, precision_recall_fscore_support
+)
 from sklearn.model_selection import train_test_split
 from evaluating.evaluate import evaluate_hf_fine_tuned_model
 from utils.exceptions import (
@@ -118,6 +120,7 @@ def fine_tune_model(
     tokenizer: AutoTokenizer,
     model_output_dir: str,
     hub_model_id: str,
+    label_names: list[str],
 ) -> Trainer:
     """
         Fine-tunes the pre-trained model on the training dataset
@@ -142,10 +145,18 @@ def fine_tune_model(
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         preds = np.argmax(logits, axis=-1)
-        return {
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            labels, preds, average=None, zero_division=0
+        )
+        metrics = {
             "accuracy": accuracy_score(labels, preds),
             "f1_macro": f1_score(labels, preds, average="macro"),
         }
+        for i, name in enumerate(label_names):
+            metrics[f"precision_{name}"] = float(precision[i])
+            metrics[f"recall_{name}"] = float(recall[i])
+            metrics[f"f1_{name}"] = float(f1[i])
+        return metrics
 
     training_args = TrainingArguments(
         output_dir=model_output_dir,

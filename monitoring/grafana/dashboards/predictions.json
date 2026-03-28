@@ -329,6 +329,59 @@
       ],
       "title": "Predictions / Minute",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2,
+            "fillOpacity": 10, "pointSize": 5, "showPoints": "auto",
+            "axisBorderShow": false, "axisCenteredZero": false,
+            "axisColorMode": "text", "axisPlacement": "auto",
+            "barAlignment": 0, "barWidthFactor": 0.6,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "scaleDistribution": { "type": "linear" },
+            "showValues": false, "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "min": 0, "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.7 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(sentiment_prediction_confidence_bucket[5m]))",
+          "legendFormat": "p50", "range": true, "refId": "p50"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(sentiment_prediction_confidence_bucket[5m]))",
+          "legendFormat": "p95", "range": true, "refId": "p95"
+        }
+      ],
+      "title": "Prediction Confidence (p50 / p95)",
+      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -356,6 +409,6 @@
   "timezone": "browser",
   "title": "Predictions",
   "uid": "adx2bz9",
-  "version": 12,
+  "version": 13,
   "weekStart": ""
 }

@@ -15,6 +15,12 @@ inference_latency = Histogram(
     buckets=[0.05, 0.1, 0.25, 0.5, 1.0, 2.5],
 )
 
+prediction_confidence = Histogram(
+    "sentiment_prediction_confidence",
+    "Confidence score of sentiment predictions",
+    buckets=[0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
+)
+
 
 # Training metrics
 
@@ -31,4 +37,22 @@ model_accuracy = Gauge(
 model_eval_loss = Gauge(
     "model_eval_loss",
     "Last Training Loss",
+)
+
+model_precision_per_class = Gauge(
+    "model_eval_precision_per_class",
+    "Per-class precision from last training",
+    ["label"],
+)
+
+model_recall_per_class = Gauge(
+    "model_eval_recall_per_class",
+    "Per-class recall from last training",
+    ["label"],
+)
+
+model_f1_per_class = Gauge(
+    "model_eval_f1_per_class",
+    "Per-class F1 score from last training",
+    ["label"],
 )

@@ -70,9 +70,14 @@ with DAG(
             train_dataset, test_dataset, tokenizer, hf_model_config["label2id"],
         )
 
+        label_names = [
+            k for k, _ in sorted(
+                hf_model_config["label2id"].items(), key=lambda x: x[1]
+            )
+        ]
         trainer = fine_tune_model(
             train_dataset, test_dataset, model, tokenizer,
-            MODEL_OUTPUT_DIR, config["hf_hub_model_id"],
+            MODEL_OUTPUT_DIR, config["hf_hub_model_id"], label_names,
         )
 
         trainer.save_model(MODEL_OUTPUT_DIR)
