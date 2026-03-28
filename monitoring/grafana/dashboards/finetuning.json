@@ -225,6 +225,129 @@
       ],
       "title": "F1 Macro (last training)",
       "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2,
+            "fillOpacity": 0, "pointSize": 5, "showPoints": "auto",
+            "axisBorderShow": false, "axisCenteredZero": false,
+            "axisColorMode": "text", "axisPlacement": "auto",
+            "barAlignment": 0, "barWidthFactor": 0.6,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "scaleDistribution": { "type": "linear" },
+            "showValues": false, "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "negative" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "neutral" },  "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "positive" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_f1_per_class{label=\"negative\"}", "legendFormat": "negative", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_f1_per_class{label=\"neutral\"}",  "legendFormat": "neutral",  "range": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_f1_per_class{label=\"positive\"}", "legendFormat": "positive", "range": true, "refId": "C" }
+      ],
+      "title": "F1 per class (last training)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2,
+            "fillOpacity": 0, "pointSize": 5, "showPoints": "auto",
+            "axisBorderShow": false, "axisCenteredZero": false,
+            "axisColorMode": "text", "axisPlacement": "auto",
+            "barAlignment": 0, "barWidthFactor": 0.6,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "scaleDistribution": { "type": "linear" },
+            "showValues": false, "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "negative" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "neutral" },  "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "positive" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_precision_per_class{label=\"negative\"}", "legendFormat": "negative", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_precision_per_class{label=\"neutral\"}",  "legendFormat": "neutral",  "range": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_precision_per_class{label=\"positive\"}", "legendFormat": "positive", "range": true, "refId": "C" }
+      ],
+      "title": "Precision per class (last training)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2,
+            "fillOpacity": 0, "pointSize": 5, "showPoints": "auto",
+            "axisBorderShow": false, "axisCenteredZero": false,
+            "axisColorMode": "text", "axisPlacement": "auto",
+            "barAlignment": 0, "barWidthFactor": 0.6,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "scaleDistribution": { "type": "linear" },
+            "showValues": false, "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "negative" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "neutral" },  "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "positive" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_recall_per_class{label=\"negative\"}", "legendFormat": "negative", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_recall_per_class{label=\"neutral\"}",  "legendFormat": "neutral",  "range": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "$datasource" }, "editorMode": "code", "expr": "model_eval_recall_per_class{label=\"positive\"}", "legendFormat": "positive", "range": true, "refId": "C" }
+      ],
+      "title": "Recall per class (last training)",
+      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -252,6 +375,6 @@
   "timezone": "browser",
   "title": "Fine tuning",
   "uid": "adcf88q",
-  "version": 8,
+  "version": 9,
   "weekStart": ""
 }
