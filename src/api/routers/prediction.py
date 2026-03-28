@@ -2,7 +2,9 @@ import time
 from fastapi import APIRouter, HTTPException, Request
 from api.schemas.prediction import PredictRequestBody, PredictResponseBody
 from api.services.prediction import make_prediction
-from api.utils.metrics import predictions_counter, inference_latency, prediction_confidence
+from api.utils.metrics import (
+    predictions_counter, inference_latency, prediction_confidence
+)
 
 router = APIRouter(
     prefix="/predict",
