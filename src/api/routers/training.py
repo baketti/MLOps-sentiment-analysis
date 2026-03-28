@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Request
 from api.schemas.training import TrainingResponse
 from api.services.training import train_and_save_model
-from api.utils.metrics import model_f1_macro, model_accuracy, model_eval_loss
+from api.utils.metrics import (
+    model_f1_macro, model_accuracy, model_eval_loss,
+    model_precision_per_class, model_recall_per_class, model_f1_per_class,
+)
 from predicting.make_prediction import create_sentiment_pipeline
 
 router = APIRouter(
@@ -18,6 +21,16 @@ async def train(request: Request) -> TrainingResponse:
         model_f1_macro.set(metrics["f1_macro"])
         model_accuracy.set(metrics["accuracy"])
         model_eval_loss.set(metrics["loss"])
+        for label in app_config["hf_model"]["label2id"]:
+            model_precision_per_class.labels(label=label).set(
+                metrics.get(f"precision_{label}", 0)
+            )
+            model_recall_per_class.labels(label=label).set(
+                metrics.get(f"recall_{label}", 0)
+            )
+            model_f1_per_class.labels(label=label).set(
+                metrics.get(f"f1_{label}", 0)
+            )
         hub_model_id = app_config["hf_hub_model_id"]
         app_config["sentiment_pipeline"] = create_sentiment_pipeline(
             hub_model_id
