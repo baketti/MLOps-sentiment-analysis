@@ -11,7 +11,7 @@ def test_fine_tune_model_success():
          patch("training.train_model.Trainer", return_value=mock_trainer):
         result = fine_tune_model(
             MagicMock(), MagicMock(), MagicMock(), MagicMock(),
-            "/tmp/out", "user/model"
+            "/tmp/out", "user/model", ["negative", "neutral", "positive"]
         )
     assert result == mock_trainer
 
@@ -25,7 +25,7 @@ def test_fine_tune_model_error():
         with pytest.raises(FineTuningError, match="Error during fine-tuning"):
             fine_tune_model(
                 MagicMock(), MagicMock(), MagicMock(), MagicMock(),
-                "/tmp/out", "user/model"
+                "/tmp/out", "user/model", ["negative", "neutral", "positive"]
             )
 
 
