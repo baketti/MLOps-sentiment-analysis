@@ -38,10 +38,18 @@ def evaluate_hf_fine_tuned_model(
         ):
             is_ready_for_hf_hub = True
 
+        per_class = {
+            k.removeprefix("eval_"): v
+            for k, v in eval_results.items()
+            if k.startswith(("eval_precision_", "eval_recall_", "eval_f1_"))
+            and k != "eval_f1_macro"
+        }
+
         return is_ready_for_hf_hub, {
             "accuracy": accuracy,
             "f1_macro": f1_macro,
             "loss": loss,
+            **per_class,
         }
     except Exception as e:
         raise EvaluationError(

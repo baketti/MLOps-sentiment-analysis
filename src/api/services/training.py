@@ -35,9 +35,10 @@ def train_and_save_model(app_config: dict) -> dict:
         train_dataset, test_dataset, tokenizer, label2id
     )
 
+    label_names = [k for k, _ in sorted(label2id.items(), key=lambda x: x[1])]
     trainer = fine_tune_model(
         train_dataset, test_dataset, model, tokenizer,
-        model_output_dir, hub_model_id
+        model_output_dir, hub_model_id, label_names
     )
 
     return save_and_push_model_on_hf_hub(
