@@ -34,7 +34,7 @@ def test_save_and_push_passes_quality_gate():
     with patch(
         "training.train_model.evaluate_hf_fine_tuned_model",
         return_value=(True, {"accuracy": 0.85, "f1_macro": 0.82})
-    ):
+    ), patch("training.train_model.save_confidence_reference"):
         save_and_push_model_on_hf_hub(
             mock_trainer, MagicMock(), "/tmp/out",
             {"accuracy_min": 0.7, "f1_min": 0.7}
@@ -47,7 +47,7 @@ def test_save_and_push_fails_quality_gate():
     with patch(
         "training.train_model.evaluate_hf_fine_tuned_model",
         return_value=(False, {"accuracy": 0.5, "f1_macro": 0.4})
-    ):
+    ), patch("training.train_model.save_confidence_reference"):
         save_and_push_model_on_hf_hub(
             mock_trainer, MagicMock(), "/tmp/out",
             {"accuracy_min": 0.7, "f1_min": 0.7}
@@ -61,7 +61,7 @@ def test_save_and_push_hub_error():
     with patch(
         "training.train_model.evaluate_hf_fine_tuned_model",
         return_value=(True, {"accuracy": 0.85, "f1_macro": 0.82})
-    ):
+    ), patch("training.train_model.save_confidence_reference"):
         with pytest.raises(PushingToHubError, match="Error pushing model"):
             save_and_push_model_on_hf_hub(
                 mock_trainer, MagicMock(), "/tmp/out",
