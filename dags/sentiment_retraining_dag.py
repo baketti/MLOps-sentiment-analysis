@@ -49,7 +49,7 @@ with DAG(
             tokenize_train_test_datasets,
             fine_tune_model,
         )
-        from evaluating.evaluate import evaluate_hf_fine_tuned_model
+        from evaluating.evaluate import evaluate_hf_fine_tuned_model, save_confidence_reference
         from utils.config import load_config
 
         config = load_config(CONFIG_PATH)
@@ -87,6 +87,9 @@ with DAG(
             trainer, config["quality_thresholds"]
         )
 
+        reference_path = os.path.join(MODEL_OUTPUT_DIR, "reference_confidence.json")
+        save_confidence_reference(trainer, reference_path)
+
         print(f"Training completed: {metrics}")
         return metrics
 
@@ -120,6 +123,79 @@ with DAG(
 
         return passed
 
+    @task.short_circuit
+    def drift_detection_task() -> bool:
+        import json
+        import numpy as np
+        from scipy import stats
+
+        PROMETHEUS_URL = "http://prometheus:9090"
+        FASTAPI_URL = "http://fastapi:8000"
+        REFERENCE_PATH = os.path.join(MODEL_OUTPUT_DIR, "reference_confidence.json")
+        DRIFT_THRESHOLD = 0.05
+
+        if not os.path.exists(REFERENCE_PATH):
+            print("No confidence reference found, skipping drift detection.")
+            return False
+
+        with open(REFERENCE_PATH) as f:
+            reference = json.load(f)
+
+        query = (
+            "sum(rate(sentiment_prediction_confidence_bucket[24h])) by (le)"
+        )
+        response = requests.get(
+            f"{PROMETHEUS_URL}/api/v1/query",
+            params={"query": query},
+            timeout=10,
+        )
+        response.raise_for_status()
+        result = response.json().get("data", {}).get("result", [])
+
+        if not result:
+            print("No prediction confidence data in Prometheus, skipping.")
+            return False
+
+        buckets = sorted(
+            [(float(r["metric"]["le"]), float(r["value"][1])) for r in result],
+            key=lambda x: x[0],
+        )
+        total = buckets[-1][1]
+        if total == 0:
+            print("No predictions recorded yet, skipping drift detection.")
+            return False
+
+        production_samples = np.array([
+            le for le, count in buckets if le != float("inf")
+            for _ in range(int(round((count / total) * reference["n_samples"])))
+        ])
+        reference_samples = np.random.normal(
+            loc=reference["mean"],
+            scale=max(reference["std"], 1e-6),
+            size=reference["n_samples"],
+        )
+        reference_samples = np.clip(reference_samples, 0, 1)
+
+        if len(production_samples) == 0:
+            print("Could not reconstruct production samples, skipping.")
+            return False
+
+        ks_stat, p_value = stats.ks_2samp(reference_samples, production_samples)
+        drift_score = float(ks_stat)
+
+        requests.post(
+            f"{FASTAPI_URL}/metrics/drift",
+            json={"score": drift_score},
+            timeout=10,
+        )
+
+        drift_detected = p_value < DRIFT_THRESHOLD
+        print(
+            f"Drift detection: KS={ks_stat:.4f}, p-value={p_value:.4f}, "
+            f"drift={'YES' if drift_detected else 'NO'}"
+        )
+        return drift_detected
+
     @task
     def push_to_hub_task():
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -136,9 +212,10 @@ with DAG(
         print(f"Model pushed to HF Hub: {hub_model_id}")
 
     download_dataset = download_dataset_task()
+    drift_check = drift_detection_task()
     fine_tune = fine_tune_task()
     update_metrics = update_metrics_task(fine_tune)
     quality_gate = quality_gate_task(fine_tune)
 
-    download_dataset >> fine_tune
+    drift_check >> download_dataset >> fine_tune
     update_metrics >> quality_gate >> push_to_hub_task()
