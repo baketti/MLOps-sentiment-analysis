@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from datasets import Dataset
@@ -13,7 +14,7 @@ from sklearn.metrics import (
     f1_score, accuracy_score, precision_recall_fscore_support
 )
 from sklearn.model_selection import train_test_split
-from evaluating.evaluate import evaluate_hf_fine_tuned_model
+from evaluating.evaluate import evaluate_hf_fine_tuned_model, save_confidence_reference
 from utils.exceptions import (
     InvalidDatasetStructureError,
     LoadingDatasetError,
@@ -210,6 +211,11 @@ def save_and_push_model_on_hf_hub(
         is_ready_to_push, metrics = evaluate_hf_fine_tuned_model(
             trainer, quality_thresholds
         )
+
+        reference_path = os.path.join(
+            model_output_dir, "reference_confidence.json"
+        )
+        save_confidence_reference(trainer, reference_path)
 
         if is_ready_to_push:
             commit_message = (

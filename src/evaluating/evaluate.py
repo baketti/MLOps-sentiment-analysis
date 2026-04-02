@@ -1,5 +1,52 @@
+import json
+import os
+import numpy as np
 from transformers import Trainer
 from utils.exceptions import EvaluationError
+
+
+def save_confidence_reference(trainer: Trainer, output_path: str) -> None:
+    """
+        Computes confidence scores on the eval dataset and saves
+        summary statistics to a JSON file for use as drift detection reference.
+        Params:
+            trainer (Trainer): The Trainer object after fine-tuning.
+            output_path (str): Path where the reference JSON will be saved.
+        Raises:
+            EvaluationError: If there is an error during computation or saving.
+    """
+    try:
+        predictions = trainer.predict(trainer.eval_dataset)
+        logits = predictions.predictions
+        shifted = logits - logits.max(axis=-1, keepdims=True)
+        exp_logits = np.exp(shifted)
+        probs = exp_logits / exp_logits.sum(axis=-1, keepdims=True)
+        confidence = probs.max(axis=-1).tolist()
+
+        stats = {
+            "mean": float(np.mean(confidence)),
+            "std": float(np.std(confidence)),
+            "p25": float(np.percentile(confidence, 25)),
+            "p50": float(np.percentile(confidence, 50)),
+            "p75": float(np.percentile(confidence, 75)),
+            "p95": float(np.percentile(confidence, 95)),
+            "n_samples": len(confidence),
+        }
+
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        with open(output_path, "w") as f:
+            json.dump(stats, f, indent=2)
+
+        print(
+            f"Confidence reference saved to {output_path}: "
+            f"mean={stats['mean']:.3f}, std={stats['std']:.3f}, "
+            f"n={stats['n_samples']}"
+        )
+    except Exception as e:
+        raise EvaluationError(f"Error saving confidence reference: {e}")
 
 
 def evaluate_hf_fine_tuned_model(
