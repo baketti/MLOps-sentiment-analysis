@@ -56,3 +56,11 @@ model_f1_per_class = Gauge(
     "Per-class F1 score from last training",
     ["label"],
 )
+
+
+# Drift metrics
+
+drift_score = Gauge(
+    "sentiment_drift_score",
+    "Confidence drift z-score vs training reference (updated by drift detection DAG)",
+)
