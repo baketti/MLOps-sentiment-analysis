@@ -43,13 +43,17 @@ with DAG(
 
     @task
     def fine_tune_task() -> dict:
-        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        from transformers import (
+            AutoTokenizer, AutoModelForSequenceClassification
+        )
         from training.train_model import (
             get_train_test_datasets,
             tokenize_train_test_datasets,
             fine_tune_model,
         )
-        from evaluating.evaluate import evaluate_hf_fine_tuned_model, save_confidence_reference
+        from evaluating.evaluate import (
+            evaluate_hf_fine_tuned_model, save_confidence_reference
+        )
         from utils.config import load_config
 
         config = load_config(CONFIG_PATH)
@@ -67,7 +71,8 @@ with DAG(
             config["kaggle_dataset"]["file_path"],
         )
         train_dataset, test_dataset = tokenize_train_test_datasets(
-            train_dataset, test_dataset, tokenizer, hf_model_config["label2id"],
+            train_dataset, test_dataset,
+            tokenizer, hf_model_config["label2id"],
         )
 
         label_names = [
@@ -87,7 +92,9 @@ with DAG(
             trainer, config["quality_thresholds"]
         )
 
-        reference_path = os.path.join(MODEL_OUTPUT_DIR, "reference_confidence.json")
+        reference_path = os.path.join(
+            MODEL_OUTPUT_DIR, "reference_confidence.json"
+        )
         save_confidence_reference(trainer, reference_path)
 
         print(f"Training completed: {metrics}")
@@ -131,7 +138,9 @@ with DAG(
 
         PROMETHEUS_URL = "http://prometheus:9090"
         FASTAPI_URL = "http://fastapi:8000"
-        REFERENCE_PATH = os.path.join(MODEL_OUTPUT_DIR, "reference_confidence.json")
+        REFERENCE_PATH = os.path.join(
+            MODEL_OUTPUT_DIR, "reference_confidence.json"
+        )
         DRIFT_THRESHOLD = 0.05
 
         if not os.path.exists(REFERENCE_PATH):
@@ -157,7 +166,10 @@ with DAG(
             return False
 
         buckets = sorted(
-            [(float(r["metric"]["le"]), float(r["value"][1])) for r in result],
+            [
+                (float(r["metric"]["le"]), float(r["value"][1]))
+                for r in result
+            ],
             key=lambda x: x[0],
         )
         total = buckets[-1][1]
@@ -166,8 +178,11 @@ with DAG(
             return False
 
         production_samples = np.array([
-            le for le, count in buckets if le != float("inf")
-            for _ in range(int(round((count / total) * reference["n_samples"])))
+            le for le, count in buckets
+            if le != float("inf")
+            for _ in range(
+                int(round((count / total) * reference["n_samples"]))
+            )
         ])
         reference_samples = np.random.normal(
             loc=reference["mean"],
@@ -180,7 +195,9 @@ with DAG(
             print("Could not reconstruct production samples, skipping.")
             return False
 
-        ks_stat, p_value = stats.ks_2samp(reference_samples, production_samples)
+        ks_stat, p_value = stats.ks_2samp(
+            reference_samples, production_samples
+        )
         drift_score = float(ks_stat)
 
         requests.post(
@@ -198,13 +215,17 @@ with DAG(
 
     @task
     def push_to_hub_task():
-        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+        from transformers import (
+            AutoModelForSequenceClassification, AutoTokenizer
+        )
         from utils.config import load_config
 
         config = load_config(CONFIG_PATH)
         hub_model_id = config["hf_hub_model_id"]
 
-        model = AutoModelForSequenceClassification.from_pretrained(MODEL_OUTPUT_DIR)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            MODEL_OUTPUT_DIR
+        )
         tokenizer = AutoTokenizer.from_pretrained(MODEL_OUTPUT_DIR)
 
         model.push_to_hub(hub_model_id, token=HF_TOKEN)
