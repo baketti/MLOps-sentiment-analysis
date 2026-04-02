@@ -382,6 +382,51 @@
       ],
       "title": "Prediction Confidence (p50 / p95)",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "min": 0, "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "red", "value": 0.6 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "editorMode": "code",
+          "expr": "sentiment_drift_score",
+          "legendFormat": "KS statistic",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Confidence Drift Score (KS statistic)",
+      "type": "stat"
     }
   ],
   "preload": false,
@@ -409,6 +454,6 @@
   "timezone": "browser",
   "title": "Predictions",
   "uid": "adx2bz9",
-  "version": 13,
+  "version": 14,
   "weekStart": ""
 }
